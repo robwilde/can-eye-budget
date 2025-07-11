@@ -15,25 +15,25 @@ class ImportData extends Data
 {
     public function __construct(
         public Optional|int $id,
-        
+
         #[Required]
         public int $user_id,
-        
+
         #[Required]
         public string $filename,
-        
+
         #[Required, WithCast(DateTimeInterfaceCast::class)]
         public Carbon $imported_at,
-        
+
         public int $row_count,
         public int $matched_count,
-        
+
         #[Rule('in:pending,processing,completed,failed')]
         public string $status,
-        
+
         // Relationships
         public Optional|User $user,
-        
+
         // Computed properties
         public Optional|float $match_percentage,
         public Optional|bool $is_complete,
@@ -44,12 +44,12 @@ class ImportData extends Data
         $this->row_count = $this->row_count ?? 0;
         $this->matched_count = $this->matched_count ?? 0;
         $this->status = $this->status ?? 'pending';
-        
+
         // Compute derived values
-        $this->match_percentage = $this->row_count > 0 
+        $this->match_percentage = $this->row_count > 0
             ? round(($this->matched_count / $this->row_count) * 100, 2)
             : 0;
-            
+
         $this->is_complete = $this->status === 'completed';
         $this->is_failed = $this->status === 'failed';
         $this->is_processing = in_array($this->status, ['pending', 'processing']);

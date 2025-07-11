@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Carbon\Carbon;
 
 class RecurringPattern extends Model
 {
@@ -64,15 +64,15 @@ class RecurringPattern extends Model
         return $query->active()
             ->where(function ($q) {
                 $q->whereNull('last_generated_date')
-                  ->orWhere('last_generated_date', '<', $this->getNextDueDate());
+                    ->orWhere('last_generated_date', '<', $this->getNextDueDate());
             });
     }
 
     public function getNextDueDate(): Carbon
     {
         $lastGenerated = $this->last_generated_date ?? $this->start_date;
-        
-        return match($this->frequency) {
+
+        return match ($this->frequency) {
             'daily' => $lastGenerated->addDays($this->frequency_interval),
             'weekly' => $lastGenerated->addWeeks($this->frequency_interval),
             'bi-weekly' => $lastGenerated->addWeeks(2 * $this->frequency_interval),
@@ -84,7 +84,7 @@ class RecurringPattern extends Model
 
     public function isDue(): bool
     {
-        if (!$this->is_active) {
+        if (! $this->is_active) {
             return false;
         }
 
@@ -93,7 +93,7 @@ class RecurringPattern extends Model
         }
 
         $nextDue = $this->getNextDueDate();
-        
+
         return Carbon::now()->isSameDay($nextDue) || Carbon::now()->isAfter($nextDue);
     }
 

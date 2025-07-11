@@ -19,7 +19,7 @@ return new class extends Migration
             $table->decimal('initial_balance', 15, 2)->default(0);
             $table->string('currency', 3)->default('USD');
             $table->timestamps();
-            
+
             $table->index(['user_id', 'type']);
         });
     }

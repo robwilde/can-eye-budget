@@ -34,14 +34,14 @@ class CategoryRule extends Model
     public function matches(string $description, float $amount): bool
     {
         $testValue = $this->field === 'description' ? $description : $amount;
-        
-        return match($this->operator) {
+
+        return match ($this->operator) {
             'contains' => str_contains(strtolower($testValue), strtolower($this->value)),
             'equals' => strtolower($testValue) === strtolower($this->value),
             'starts_with' => str_starts_with(strtolower($testValue), strtolower($this->value)),
             'ends_with' => str_ends_with(strtolower($testValue), strtolower($this->value)),
-            'greater_than' => is_numeric($testValue) && (float)$testValue > (float)$this->value,
-            'less_than' => is_numeric($testValue) && (float)$testValue < (float)$this->value,
+            'greater_than' => is_numeric($testValue) && (float) $testValue > (float) $this->value,
+            'less_than' => is_numeric($testValue) && (float) $testValue < (float) $this->value,
             default => false
         };
     }

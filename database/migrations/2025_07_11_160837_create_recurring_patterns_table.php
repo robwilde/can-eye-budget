@@ -27,7 +27,7 @@ return new class extends Migration
             $table->date('last_generated_date')->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamps();
-            
+
             $table->index(['account_id', 'is_active']);
             $table->index(['frequency', 'last_generated_date']);
         });

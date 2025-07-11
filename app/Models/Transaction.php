@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Carbon\Carbon;
 
 class Transaction extends Model
 {
@@ -87,13 +87,13 @@ class Transaction extends Model
     {
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
-        
+
         return $query->forDateRange($startDate, $endDate);
     }
 
     public function getSignedAmountAttribute(): float
     {
-        return match($this->type) {
+        return match ($this->type) {
             'income' => (float) $this->amount,
             'expense' => -(float) $this->amount,
             'transfer' => -(float) $this->amount,
@@ -108,6 +108,6 @@ class Transaction extends Model
 
     public function isRecurring(): bool
     {
-        return !is_null($this->recurring_pattern_id);
+        return ! is_null($this->recurring_pattern_id);
     }
 }

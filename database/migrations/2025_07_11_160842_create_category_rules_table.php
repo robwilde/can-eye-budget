@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('value');
             $table->unsignedInteger('priority')->default(1);
             $table->timestamps();
-            
+
             $table->index(['category_id', 'priority']);
             $table->index('field');
         });

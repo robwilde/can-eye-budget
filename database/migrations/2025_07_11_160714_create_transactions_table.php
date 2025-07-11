@@ -25,7 +25,7 @@ return new class extends Migration
             $table->boolean('reconciled')->default(false);
             $table->timestamps();
             $table->softDeletes();
-            
+
             $table->index(['account_id', 'transaction_date']);
             $table->index(['category_id', 'transaction_date']);
             $table->index(['type', 'transaction_date']);

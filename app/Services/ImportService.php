@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Data\CsvRowData;
-use App\Data\DuplicateData;
 use App\Data\ImportData;
 use App\Data\ImportResultData;
 use App\Data\TransactionData;
@@ -15,11 +14,11 @@ use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ImportService
 {
     private TransactionService $transactionService;
+
     private CategoryMatchingService $categoryMatchingService;
 
     public function __construct(
@@ -50,14 +49,14 @@ class ImportService
         try {
             $csvData = $this->readCsvFile($import);
             $processedData = $this->processCsvData($csvData, $columnMapping);
-            
+
             $duplicates = $this->detectDuplicates($account, $processedData);
             $uniqueTransactions = $processedData->reject(function ($csvRow) use ($duplicates) {
                 return $duplicates->contains('csv_row_hash', $csvRow->csv_row_hash);
             });
 
             $categorizedTransactions = $this->autoCategorizeTransactions($import->user, $uniqueTransactions);
-            
+
             $createdTransactions = $this->createTransactions($account, $categorizedTransactions, $import);
 
             $import->update([
@@ -78,7 +77,7 @@ class ImportService
 
         } catch (\Exception $e) {
             $import->update(['status' => 'failed']);
-            
+
             return new ImportResultData(
                 success: false,
                 import: ImportData::fromModel($import),
@@ -156,6 +155,7 @@ class ImportService
     private function readCsvFile(Import $import): Collection
     {
         $path = storage_path("app/imports/{$import->filename}");
+
         return $this->readCsvFromPath($path);
     }
 
@@ -167,16 +167,16 @@ class ImportService
     private function readCsvFromPath(string $path): Collection
     {
         $csvData = collect();
-        
+
         if (($handle = fopen($path, 'r')) !== false) {
             $headers = fgetcsv($handle);
-            
+
             while (($row = fgetcsv($handle)) !== false) {
                 if (count($row) === count($headers)) {
                     $csvData->push(array_combine($headers, $row));
                 }
             }
-            
+
             fclose($handle);
         }
 
@@ -201,7 +201,7 @@ class ImportService
             if (isset($processed['debit']) && isset($processed['credit'])) {
                 $debit = (float) ($processed['debit'] ?: 0);
                 $credit = (float) ($processed['credit'] ?: 0);
-                
+
                 if ($debit > 0) {
                     $processed['amount'] = $debit;
                     $processed['type'] = 'expense';
@@ -228,7 +228,7 @@ class ImportService
     {
         $value = trim($value);
 
-        return match($field) {
+        return match ($field) {
             'date' => $this->parseDate($value),
             'amount', 'debit', 'credit' => $this->parseAmount($value),
             'description' => $value,
@@ -265,6 +265,7 @@ class ImportService
     {
         // Remove currency symbols and spaces
         $cleaned = preg_replace('/[^\d\.\-\+]/', '', $value);
+
         return (float) $cleaned;
     }
 
@@ -305,7 +306,7 @@ class ImportService
     {
         // Check date match (within 1 day tolerance)
         $csvDate = $csvRow['date'];
-        if (!$csvDate || abs($transaction->transaction_date->diffInDays($csvDate)) > 1) {
+        if (! $csvDate || abs($transaction->transaction_date->diffInDays($csvDate)) > 1) {
             return false;
         }
 
@@ -348,15 +349,16 @@ class ImportService
     {
         $str1 = strtolower(trim($str1));
         $str2 = strtolower(trim($str2));
-        
+
         similar_text($str1, $str2, $percent);
+
         return $percent / 100;
     }
 
     private function getDateRangeFromCsv(Collection $csvData): array
     {
         $dates = $csvData->pluck('date')->filter();
-        
+
         return [
             $dates->min()->subDays(1), // Add buffer
             $dates->max()->addDays(1), // Add buffer

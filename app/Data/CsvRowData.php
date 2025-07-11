@@ -17,10 +17,10 @@ class CsvRowData extends Data
         public string $type,
         public float $amount,
         public string $description,
-        
+
         #[WithCast(DateTimeInterfaceCast::class)]
         public Carbon $date,
-        
+
         public Optional|float $debit,
         public Optional|float $credit,
         public Optional|float $balance,

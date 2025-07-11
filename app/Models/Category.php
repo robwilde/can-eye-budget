@@ -47,7 +47,7 @@ class Category extends Model
     {
         $ancestors = $this->ancestors()->pluck('name')->toArray();
         $ancestors[] = $this->name;
-        
+
         return implode(' > ', $ancestors);
     }
 }

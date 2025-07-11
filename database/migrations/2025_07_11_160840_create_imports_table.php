@@ -20,7 +20,7 @@ return new class extends Migration
             $table->unsignedInteger('matched_count')->default(0);
             $table->enum('status', ['pending', 'processing', 'completed', 'failed']);
             $table->timestamps();
-            
+
             $table->index(['user_id', 'status']);
             $table->index('imported_at');
         });

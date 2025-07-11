@@ -19,42 +19,42 @@ class TransactionData extends Data
 {
     public function __construct(
         public Optional|int $id,
-        
+
         #[Required]
         public int $account_id,
-        
+
         #[Required, Rule('in:income,expense,transfer')]
         public string $type,
-        
+
         #[Required, Rule('numeric|min:0')]
         public float $amount,
-        
+
         #[Required]
         public string $description,
-        
+
         #[Required, WithCast(DateTimeInterfaceCast::class, format: 'Y-m-d')]
         public Carbon $transaction_date,
-        
+
         public Optional|int|null $category_id,
-        
+
         #[MapName('transfer_to_account_id')]
         public Optional|int|null $transferToAccountId,
-        
+
         #[MapName('recurring_pattern_id')]
         public Optional|int|null $recurringPatternId,
-        
+
         #[MapName('import_id')]
         public Optional|int|null $importId,
-        
+
         public Optional|bool $reconciled,
-        
+
         // Relationships (optional for when we need them)
         public Optional|Account $account,
         public Optional|Category|null $category,
         public Optional|Account|null $transferToAccount,
         public Optional|RecurringPattern|null $recurringPattern,
         public Optional|Import|null $import,
-        
+
         // Computed properties
         public Optional|float $signed_amount,
         public Optional|bool $is_transfer,
@@ -62,17 +62,17 @@ class TransactionData extends Data
     ) {
         // Set defaults
         $this->reconciled = $this->reconciled ?? false;
-        
+
         // Compute derived values
-        $this->signed_amount = match($this->type) {
+        $this->signed_amount = match ($this->type) {
             'income' => $this->amount,
             'expense' => -$this->amount,
             'transfer' => -$this->amount,
             default => 0
         };
-        
+
         $this->is_transfer = $this->type === 'transfer';
-        $this->is_recurring = !is_null($this->recurringPatternId instanceof Optional ? null : $this->recurringPatternId);
+        $this->is_recurring = ! is_null($this->recurringPatternId instanceof Optional ? null : $this->recurringPatternId);
     }
 
     public static function fromModel(\App\Models\Transaction $transaction): self
@@ -117,6 +117,7 @@ class TransactionData extends Data
     {
         $data = $this->toCreateArray();
         unset($data['account_id']); // Account cannot be changed on update
+
         return $data;
     }
 }

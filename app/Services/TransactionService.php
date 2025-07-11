@@ -75,8 +75,8 @@ class TransactionService
     public function getTransactionsForPeriod(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
         return Transaction::whereHas('account', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
+            $query->where('user_id', $user->id);
+        })
             ->with(['account', 'category', 'transferToAccount'])
             ->forDateRange($startDate, $endDate)
             ->orderBy('transaction_date', 'desc')
@@ -125,20 +125,22 @@ class TransactionService
     public function reconcileTransaction(Transaction $transaction): Transaction
     {
         $transaction->update(['reconciled' => true]);
+
         return $transaction;
     }
 
     public function unreconcileTransaction(Transaction $transaction): Transaction
     {
         $transaction->update(['reconciled' => false]);
+
         return $transaction;
     }
 
     private function createTransferTransaction(Transaction $sourceTransaction): void
     {
         $targetAccount = Account::find($sourceTransaction->transfer_to_account_id);
-        
-        if (!$targetAccount) {
+
+        if (! $targetAccount) {
             return;
         }
 

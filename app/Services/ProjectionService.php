@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Models\Account;
-use App\Models\RecurringPattern;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
@@ -38,7 +37,7 @@ class ProjectionService
 
         while ($currentDate->lte($endDate)) {
             $dailyBalance = $this->calculateDailyBalance($account, $currentDate, $runningBalance);
-            
+
             $projections[] = [
                 'date' => $currentDate->copy(),
                 'balance' => $dailyBalance['balance'],
@@ -59,9 +58,9 @@ class ProjectionService
     public function findNegativeBalanceDates(Account $account, Carbon $endDate): Collection
     {
         $projections = $this->calculateAccountProjections($account, $endDate);
-        
+
         return collect($projections)
-            ->filter(fn($projection) => $projection['is_negative'])
+            ->filter(fn ($projection) => $projection['is_negative'])
             ->pluck('date');
     }
 
@@ -73,7 +72,7 @@ class ProjectionService
         for ($i = 0; $i < $months; $i++) {
             $month = $startDate->copy()->addMonths($i);
             $endOfMonth = $month->copy()->endOfMonth();
-            
+
             $monthData = [
                 'month' => $month->format('Y-m'),
                 'month_name' => $month->format('F Y'),
@@ -86,7 +85,7 @@ class ProjectionService
             foreach ($user->accounts as $account) {
                 $accountProjections = $this->calculateAccountProjections($account, $endOfMonth);
                 $lastDay = end($accountProjections);
-                
+
                 if ($lastDay) {
                     $monthData['accounts'][$account->id] = [
                         'name' => $account->name,
@@ -94,7 +93,7 @@ class ProjectionService
                         'income' => collect($accountProjections)->sum('income'),
                         'expenses' => collect($accountProjections)->sum('expenses'),
                     ];
-                    
+
                     $monthData['total_balance'] += $lastDay['balance'];
                     $monthData['total_income'] += $monthData['accounts'][$account->id]['income'];
                     $monthData['total_expenses'] += $monthData['accounts'][$account->id]['expenses'];
@@ -110,11 +109,11 @@ class ProjectionService
     public function getUpcomingTransactions(User $user, int $days = 30): Collection
     {
         $endDate = Carbon::now()->addDays($days);
-        
+
         // Get scheduled transactions
         $scheduledTransactions = Transaction::whereHas('account', function ($query) use ($user) {
-                $query->where('user_id', $user->id);
-            })
+            $query->where('user_id', $user->id);
+        })
             ->where('transaction_date', '>', Carbon::now())
             ->where('transaction_date', '<=', $endDate)
             ->with(['account', 'category', 'recurringPattern'])

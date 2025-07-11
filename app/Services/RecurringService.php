@@ -22,14 +22,14 @@ class RecurringService
     public function generateDueTransactions(?User $user = null): Collection
     {
         $query = RecurringPattern::active()->with(['account', 'category']);
-        
+
         if ($user) {
             $query->whereHas('account', function ($q) use ($user) {
                 $q->where('user_id', $user->id);
             });
         }
 
-        $duePatterns = $query->get()->filter(fn($pattern) => $pattern->isDue());
+        $duePatterns = $query->get()->filter(fn ($pattern) => $pattern->isDue());
         $generatedTransactions = collect();
 
         DB::transaction(function () use ($duePatterns, &$generatedTransactions) {
@@ -46,7 +46,7 @@ class RecurringService
 
     public function generateTransactionFromPattern(RecurringPattern $pattern): ?Transaction
     {
-        if (!$pattern->isDue()) {
+        if (! $pattern->isDue()) {
             return null;
         }
 
@@ -55,6 +55,7 @@ class RecurringService
         // Check if end date has passed
         if ($pattern->end_date && $nextDueDate->isAfter($pattern->end_date)) {
             $pattern->update(['is_active' => false]);
+
             return null;
         }
 
@@ -93,7 +94,7 @@ class RecurringService
 
         foreach ($activePatterns as $pattern) {
             $nextDueDate = $pattern->getNextDueDate();
-            
+
             while ($nextDueDate->lte($endDate)) {
                 // Check if end date has passed
                 if ($pattern->end_date && $nextDueDate->isAfter($pattern->end_date)) {
@@ -105,7 +106,7 @@ class RecurringService
                     'account_id' => $pattern->account_id,
                     'type' => $pattern->type,
                     'amount' => $pattern->amount,
-                    'description' => $pattern->description . ' (Recurring)',
+                    'description' => $pattern->description.' (Recurring)',
                     'transaction_date' => $nextDueDate->copy(),
                     'category_id' => $pattern->category_id,
                     'transfer_to_account_id' => $pattern->transfer_to_account_id,
@@ -114,7 +115,7 @@ class RecurringService
                     'category' => $pattern->category,
                     'transferToAccount' => $pattern->transferToAccount,
                     'recurringPattern' => $pattern,
-                    'signed_amount' => match($pattern->type) {
+                    'signed_amount' => match ($pattern->type) {
                         'income' => (float) $pattern->amount,
                         'expense' => -(float) $pattern->amount,
                         'transfer' => -(float) $pattern->amount,
@@ -124,7 +125,7 @@ class RecurringService
                 ]);
 
                 // Calculate next occurrence
-                $nextDueDate = match($pattern->frequency) {
+                $nextDueDate = match ($pattern->frequency) {
                     'daily' => $nextDueDate->addDays($pattern->frequency_interval),
                     'weekly' => $nextDueDate->addWeeks($pattern->frequency_interval),
                     'bi-weekly' => $nextDueDate->addWeeks(2 * $pattern->frequency_interval),
@@ -152,10 +153,10 @@ class RecurringService
                 $transactions->push((object) [
                     'type' => $pattern->type,
                     'amount' => $pattern->amount,
-                    'description' => $pattern->description . ' (Recurring)',
+                    'description' => $pattern->description.' (Recurring)',
                     'category' => $pattern->category,
                     'transferToAccount' => $pattern->transferToAccount,
-                    'signed_amount' => match($pattern->type) {
+                    'signed_amount' => match ($pattern->type) {
                         'income' => (float) $pattern->amount,
                         'expense' => -(float) $pattern->amount,
                         'transfer' => -(float) $pattern->amount,
@@ -186,7 +187,7 @@ class RecurringService
                 'is_past_end_date' => $pattern->end_date && $nextDate->isAfter($pattern->end_date),
             ]);
 
-            $nextDate = match($pattern->frequency) {
+            $nextDate = match ($pattern->frequency) {
                 'daily' => $nextDate->addDays($pattern->frequency_interval),
                 'weekly' => $nextDate->addWeeks($pattern->frequency_interval),
                 'bi-weekly' => $nextDate->addWeeks(2 * $pattern->frequency_interval),
@@ -203,7 +204,7 @@ class RecurringService
     {
         $nextDueDate = $pattern->getNextDueDate();
         $pattern->update(['last_generated_date' => $nextDueDate]);
-        
+
         return true;
     }
 
@@ -220,7 +221,7 @@ class RecurringService
     private function isPatternDueOnDate(RecurringPattern $pattern, Carbon $date): bool
     {
         $startDate = $pattern->last_generated_date ?? $pattern->start_date;
-        
+
         if ($date->lt($startDate)) {
             return false;
         }
@@ -231,7 +232,7 @@ class RecurringService
 
         $daysDiff = $startDate->diffInDays($date);
 
-        return match($pattern->frequency) {
+        return match ($pattern->frequency) {
             'daily' => $daysDiff % $pattern->frequency_interval === 0,
             'weekly' => $daysDiff % (7 * $pattern->frequency_interval) === 0 && $date->dayOfWeek === $startDate->dayOfWeek,
             'bi-weekly' => $daysDiff % (14 * $pattern->frequency_interval) === 0 && $date->dayOfWeek === $startDate->dayOfWeek,

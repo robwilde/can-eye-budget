@@ -13,7 +13,7 @@ class ProjectionData extends Data
     public function __construct(
         #[WithCast(DateTimeInterfaceCast::class)]
         public Carbon $date,
-        
+
         public float $balance,
         public float $income,
         public float $expenses,

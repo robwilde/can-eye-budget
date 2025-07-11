@@ -17,7 +17,7 @@ class TransactionRepository
         $query = Transaction::whereHas('account', function ($q) use ($user) {
             $q->where('user_id', $user->id);
         })
-        ->with(['account', 'category', 'transferToAccount', 'recurringPattern']);
+            ->with(['account', 'category', 'transferToAccount', 'recurringPattern']);
 
         return $this->applyFilters($query, $filters);
     }
@@ -33,14 +33,14 @@ class TransactionRepository
     public function getForCalendarView(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
         return $this->findForUser($user, [
-            'date_range' => [$startDate, $endDate]
+            'date_range' => [$startDate, $endDate],
         ])
-        ->orderBy('transaction_date')
-        ->orderBy('created_at')
-        ->get()
-        ->groupBy(function ($transaction) {
-            return $transaction->transaction_date->format('Y-m-d');
-        });
+            ->orderBy('transaction_date')
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy(function ($transaction) {
+                return $transaction->transaction_date->format('Y-m-d');
+            });
     }
 
     public function getRecent(User $user, int $limit = 10): Collection
@@ -63,8 +63,8 @@ class TransactionRepository
     public function getMonthlyTotals(User $user, int $year): array
     {
         $monthlySums = Transaction::whereHas('account', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
+            $q->where('user_id', $user->id);
+        })
             ->whereYear('transaction_date', $year)
             ->selectRaw('
                 MONTH(transaction_date) as month,
@@ -105,8 +105,8 @@ class TransactionRepository
     public function getCategoryTotals(User $user, Carbon $startDate, Carbon $endDate): Collection
     {
         return Transaction::whereHas('account', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
+            $q->where('user_id', $user->id);
+        })
             ->with('category')
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->selectRaw('
@@ -146,8 +146,8 @@ class TransactionRepository
     public function bulkUpdateCategories(User $user, array $transactionIds, int $categoryId): int
     {
         return Transaction::whereHas('account', function ($q) use ($user) {
-                $q->where('user_id', $user->id);
-            })
+            $q->where('user_id', $user->id);
+        })
             ->whereIn('id', $transactionIds)
             ->update(['category_id' => $categoryId]);
     }

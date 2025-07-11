@@ -52,7 +52,7 @@ class CategoryMatchingService
     {
         // Extract meaningful keywords from description
         $keywords = $this->extractKeywords($description);
-        
+
         foreach ($keywords as $keyword) {
             // Check if a similar rule already exists
             $existingRule = CategoryRule::where('category_id', $category->id)
@@ -61,7 +61,7 @@ class CategoryMatchingService
                 ->where('value', $keyword)
                 ->first();
 
-            if (!$existingRule) {
+            if (! $existingRule) {
                 CategoryRule::create([
                     'category_id' => $category->id,
                     'field' => 'description',
@@ -80,7 +80,7 @@ class CategoryMatchingService
                 ->where('value', (string) $amount)
                 ->first();
 
-            if (!$existingAmountRule) {
+            if (! $existingAmountRule) {
                 CategoryRule::create([
                     'category_id' => $category->id,
                     'field' => 'amount',
@@ -179,8 +179,8 @@ class CategoryMatchingService
 
         return Cache::remember($cacheKey, 3600, function () use ($user) {
             return CategoryRule::whereHas('category', function ($query) use ($user) {
-                    $query->where('user_id', $user->id);
-                })
+                $query->where('user_id', $user->id);
+            })
                 ->with('category')
                 ->byPriority()
                 ->get();
@@ -199,7 +199,7 @@ class CategoryMatchingService
 
         foreach ($categories as $category) {
             $similarity = $this->calculateSimilarity($description, $category->name);
-            
+
             if ($similarity > 0.3) { // 30% similarity threshold
                 $fuzzyMatches->push([
                     'category' => $category,
@@ -214,7 +214,7 @@ class CategoryMatchingService
 
     private function calculateConfidence(CategoryRule $rule, string $description, float $amount): float
     {
-        $baseConfidence = match($rule->operator) {
+        $baseConfidence = match ($rule->operator) {
             'equals' => 1.0,
             'contains' => 0.8,
             'starts_with' => 0.9,
@@ -238,7 +238,7 @@ class CategoryMatchingService
 
     private function getMatchReason(CategoryRule $rule): string
     {
-        return match($rule->operator) {
+        return match ($rule->operator) {
             'equals' => "Exact match for {$rule->field}: '{$rule->value}'",
             'contains' => "Contains '{$rule->value}' in {$rule->field}",
             'starts_with' => "{$rule->field} starts with '{$rule->value}'",
@@ -253,14 +253,14 @@ class CategoryMatchingService
     {
         // Normalize and clean the description
         $normalized = $this->normalizeDescription($description);
-        
+
         // Split into words and filter
         $words = preg_split('/\s+/', $normalized);
         $keywords = [];
 
         foreach ($words as $word) {
             // Skip common words and very short words
-            if (strlen($word) >= 3 && !in_array(strtolower($word), $this->getStopWords())) {
+            if (strlen($word) >= 3 && ! in_array(strtolower($word), $this->getStopWords())) {
                 $keywords[] = $word;
             }
         }
@@ -291,10 +291,15 @@ class CategoryMatchingService
     {
         $keywordLength = strlen($keyword);
         $descriptionLength = strlen($fullDescription);
-        
+
         // Longer keywords get higher priority (lower number)
-        if ($keywordLength >= 8) return 1;
-        if ($keywordLength >= 5) return 2;
+        if ($keywordLength >= 8) {
+            return 1;
+        }
+        if ($keywordLength >= 5) {
+            return 2;
+        }
+
         return 3;
     }
 
@@ -307,8 +312,9 @@ class CategoryMatchingService
     {
         $str1 = strtolower($str1);
         $str2 = strtolower($str2);
-        
+
         similar_text($str1, $str2, $percent);
+
         return $percent / 100;
     }
 
@@ -319,7 +325,7 @@ class CategoryMatchingService
             'by', 'from', 'up', 'about', 'into', 'through', 'during', 'before',
             'after', 'above', 'below', 'between', 'among', 'through', 'during',
             'purchase', 'payment', 'transaction', 'debit', 'credit', 'card',
-            'pos', 'withdrawal', 'deposit', 'transfer', 'fee', 'charge'
+            'pos', 'withdrawal', 'deposit', 'transfer', 'fee', 'charge',
         ];
     }
 }

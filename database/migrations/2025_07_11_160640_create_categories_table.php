@@ -21,7 +21,7 @@ return new class extends Migration
             $table->string('color', 7)->nullable();
             $table->string('icon', 50)->nullable();
             $table->timestamps();
-            
+
             $table->index(['user_id', '_lft', '_rgt']);
             $table->index(['user_id', 'parent_id']);
         });
