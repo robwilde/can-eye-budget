@@ -15,6 +15,14 @@ This is a personal budgeting application built with Laravel 12 and PHP 8.4, usin
 
 ## Essential Commands
 
+### Development Environment Status
+**IMPORTANT**: The Laravel application is always running in a separate terminal session via `composer dev`. 
+- The dev server is typically running on http://localhost:8000
+- DO NOT start additional Laravel servers unless specifically requested
+- View logs in real-time using the existing terminal or `storage/logs/laravel.log`
+- Changes to PHP files are automatically detected (no restart needed)
+- Vite hot reload handles frontend asset changes
+
 ### Development
 ```bash
 # Start full development environment (server, queue, logs, vite)
@@ -53,6 +61,19 @@ composer pint                 # Fix code style with Laravel Pint
 php artisan migrate          # Run migrations
 php artisan migrate:fresh --seed  # Fresh migration with seeding
 php artisan db:seed          # Run seeders
+```
+
+### Debugging & Cache Management
+```bash
+# Clear caches when encountering issues
+php artisan cache:clear      # Clear application cache
+php artisan config:clear     # Clear configuration cache
+php artisan view:clear       # Clear compiled views
+php artisan route:clear      # Clear route cache
+
+# Check logs for errors
+tail -f storage/logs/laravel.log   # Follow log in real-time
+tail -20 storage/logs/laravel.log  # View last 20 lines
 ```
 
 ## Architecture Overview
