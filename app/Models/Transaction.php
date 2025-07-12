@@ -13,12 +13,15 @@ class Transaction extends Model
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'account_id',
         'type',
         'amount',
         'description',
         'transaction_date',
         'category_id',
         'transfer_to_account_id',
+        'recurring_pattern_id',
+        'import_id',
         'reconciled',
     ];
 
