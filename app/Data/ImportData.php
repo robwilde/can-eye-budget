@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data;
 
 use App\Models\User;
@@ -11,7 +13,7 @@ use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Optional;
 
-class ImportData extends Data
+final class ImportData extends Data
 {
     public function __construct(
         public Optional|int $id,
@@ -72,12 +74,12 @@ class ImportData extends Data
     public function toCreateArray(): array
     {
         return [
-            'user_id' => $this->user_id,
-            'filename' => $this->filename,
-            'imported_at' => $this->imported_at,
-            'row_count' => $this->row_count,
+            'user_id'       => $this->user_id,
+            'filename'      => $this->filename,
+            'imported_at'   => $this->imported_at,
+            'row_count'     => $this->row_count,
             'matched_count' => $this->matched_count,
-            'status' => $this->status,
+            'status'        => $this->status,
         ];
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data;
 
 use Carbon\Carbon;
@@ -8,7 +10,7 @@ use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 use Spatie\LaravelData\Data;
 
-class ProjectionData extends Data
+final class ProjectionData extends Data
 {
     public function __construct(
         #[WithCast(DateTimeInterfaceCast::class)]

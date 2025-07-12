@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data;
 
 use Illuminate\Support\Collection;
 use Spatie\LaravelData\Data;
 
-class ImportResultData extends Data
+final class ImportResultData extends Data
 {
     public function __construct(
         public bool $success,

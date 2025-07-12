@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Models\Account;
@@ -10,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class TransactionRepository
+final class TransactionRepository
 {
     public function findForUser(User $user, array $filters = []): Builder
     {
@@ -77,11 +79,11 @@ class TransactionRepository
         $monthlyData = [];
         for ($month = 1; $month <= 12; $month++) {
             $monthlyData[$month] = [
-                'month' => $month,
+                'month'      => $month,
                 'month_name' => Carbon::create($year, $month)->format('F'),
-                'income' => 0,
-                'expenses' => 0,
-                'net' => 0,
+                'income'     => 0,
+                'expenses'   => 0,
+                'net'        => 0,
             ];
         }
 

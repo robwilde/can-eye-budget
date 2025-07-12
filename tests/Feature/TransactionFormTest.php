@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
@@ -99,8 +101,8 @@ test('transaction form can edit existing transaction', function () {
 
     $transaction = Transaction::factory()->for($account)->create([
         'description' => 'Original Description',
-        'amount' => 100.00,
-        'type' => 'expense',
+        'amount'      => 100.00,
+        'type'        => 'expense',
     ]);
 
     $this->actingAs($user);

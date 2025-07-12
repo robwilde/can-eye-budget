@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Data\CsvRowData;
@@ -11,11 +13,12 @@ use App\Models\Import;
 use App\Models\Transaction;
 use App\Models\User;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-class ImportService
+final class ImportService
 {
     private TransactionService $transactionService;
 
@@ -35,10 +38,10 @@ class ImportService
         $path = $file->store('imports', 'local');
 
         return Import::create([
-            'user_id' => $user->id,
-            'filename' => $filename,
+            'user_id'     => $user->id,
+            'filename'    => $filename,
             'imported_at' => now(),
-            'status' => 'pending',
+            'status'      => 'pending',
         ]);
     }
 
@@ -60,8 +63,8 @@ class ImportService
             $createdTransactions = $this->createTransactions($account, $categorizedTransactions, $import);
 
             $import->update([
-                'status' => 'completed',
-                'row_count' => $processedData->count(),
+                'status'        => 'completed',
+                'row_count'     => $processedData->count(),
                 'matched_count' => $createdTransactions->count(),
             ]);
 
@@ -75,7 +78,7 @@ class ImportService
                 created_transactions: $createdTransactions,
             );
 
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $import->update(['status' => 'failed']);
 
             return new ImportResultData(
@@ -97,9 +100,9 @@ class ImportService
         $processedData = $this->processCsvData($csvData->take($previewRows), $columnMapping);
 
         return [
-            'total_rows' => $csvData->count(),
-            'preview_data' => $processedData,
-            'column_mapping' => $columnMapping,
+            'total_rows'       => $csvData->count(),
+            'preview_data'     => $processedData,
+            'column_mapping'   => $columnMapping,
             'detected_columns' => $this->detectColumns($csvData->first()),
         ];
     }
@@ -110,12 +113,12 @@ class ImportService
         $headers = array_map('strtolower', $headers);
 
         $columnPatterns = [
-            'date' => ['date', 'transaction_date', 'posted_date', 'trans_date'],
+            'date'        => ['date', 'transaction_date', 'posted_date', 'trans_date'],
             'description' => ['description', 'memo', 'details', 'transaction_description'],
-            'amount' => ['amount', 'transaction_amount', 'debit', 'credit'],
-            'debit' => ['debit', 'withdrawal', 'outgoing'],
-            'credit' => ['credit', 'deposit', 'incoming'],
-            'balance' => ['balance', 'running_balance', 'account_balance'],
+            'amount'      => ['amount', 'transaction_amount', 'debit', 'credit'],
+            'debit'       => ['debit', 'withdrawal', 'outgoing'],
+            'credit'      => ['credit', 'deposit', 'incoming'],
+            'balance'     => ['balance', 'running_balance', 'account_balance'],
         ];
 
         foreach ($columnPatterns as $field => $patterns) {
@@ -187,7 +190,7 @@ class ImportService
     {
         return $csvData->map(function ($row) use ($columnMapping) {
             $processed = [
-                'raw_data' => $row,
+                'raw_data'     => $row,
                 'csv_row_hash' => $this->hashCsvRow($row),
             ];
 
@@ -226,13 +229,13 @@ class ImportService
 
     private function normalizeValue(string $field, string $value): mixed
     {
-        $value = trim($value);
+        $value = mb_trim($value);
 
         return match ($field) {
             'date' => $this->parseDate($value),
             'amount', 'debit', 'credit' => $this->parseAmount($value),
             'description' => $value,
-            default => $value
+            default       => $value
         };
     }
 
@@ -249,14 +252,14 @@ class ImportService
         foreach ($formats as $format) {
             try {
                 return Carbon::createFromFormat($format, $value);
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 continue;
             }
         }
 
         try {
             return Carbon::parse($value);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return null;
         }
     }
@@ -291,10 +294,10 @@ class ImportService
 
             if ($potentialDuplicates->isNotEmpty()) {
                 $duplicates->push([
-                    'csv_row' => $csvRow,
-                    'csv_row_hash' => $this->hashCsvRow($csvRow['raw_data']),
+                    'csv_row'               => $csvRow,
+                    'csv_row_hash'          => $this->hashCsvRow($csvRow['raw_data']),
                     'existing_transactions' => $potentialDuplicates->values(),
-                    'confidence' => $this->calculateDuplicateConfidence($potentialDuplicates->first(), $csvRow),
+                    'confidence'            => $this->calculateDuplicateConfidence($potentialDuplicates->first(), $csvRow),
                 ]);
             }
         }
@@ -347,8 +350,8 @@ class ImportService
 
     private function calculateSimilarity(string $str1, string $str2): float
     {
-        $str1 = strtolower(trim($str1));
-        $str2 = strtolower(trim($str2));
+        $str1 = mb_strtolower(mb_trim($str1));
+        $str2 = mb_strtolower(mb_trim($str2));
 
         similar_text($str1, $str2, $percent);
 
@@ -427,13 +430,13 @@ class ImportService
         $account = Account::find($resolution['account_id']);
 
         $transactionData = [
-            'account_id' => $account->id,
-            'type' => $csvRow['type'],
-            'amount' => $csvRow['amount'],
-            'description' => $csvRow['description'],
+            'account_id'       => $account->id,
+            'type'             => $csvRow['type'],
+            'amount'           => $csvRow['amount'],
+            'description'      => $csvRow['description'],
             'transaction_date' => $csvRow['date']->toDateString(),
-            'category_id' => $resolution['category_id'] ?? null,
-            'import_id' => $import->id,
+            'category_id'      => $resolution['category_id'] ?? null,
+            'import_id'        => $import->id,
         ];
 
         return $this->transactionService->createTransaction(

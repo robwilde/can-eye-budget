@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
@@ -54,10 +56,10 @@ test('calendar view displays transactions correctly', function () {
     $category = Category::factory()->for($user)->create();
 
     $transaction = Transaction::factory()->for($account)->create([
-        'category_id' => $category->id,
-        'description' => 'Test Transaction',
-        'amount' => 100.00,
-        'type' => 'income',
+        'category_id'      => $category->id,
+        'description'      => 'Test Transaction',
+        'amount'           => 100.00,
+        'type'             => 'income',
         'transaction_date' => now(),
     ]);
 

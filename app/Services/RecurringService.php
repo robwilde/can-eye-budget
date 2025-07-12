@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Account;
@@ -10,7 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
-class RecurringService
+final class RecurringService
 {
     private TransactionService $transactionService;
 
@@ -60,14 +62,14 @@ class RecurringService
         }
 
         $transactionData = [
-            'account_id' => $pattern->account_id,
-            'type' => $pattern->type,
-            'amount' => $pattern->amount,
-            'description' => $pattern->description,
-            'transaction_date' => $nextDueDate->toDateString(),
-            'category_id' => $pattern->category_id,
+            'account_id'             => $pattern->account_id,
+            'type'                   => $pattern->type,
+            'amount'                 => $pattern->amount,
+            'description'            => $pattern->description,
+            'transaction_date'       => $nextDueDate->toDateString(),
+            'category_id'            => $pattern->category_id,
             'transfer_to_account_id' => $pattern->transfer_to_account_id,
-            'recurring_pattern_id' => $pattern->id,
+            'recurring_pattern_id'   => $pattern->id,
         ];
 
         $transaction = $this->transactionService->createTransaction(
@@ -102,36 +104,36 @@ class RecurringService
                 }
 
                 $upcomingTransactions->push((object) [
-                    'id' => null,
-                    'account_id' => $pattern->account_id,
-                    'type' => $pattern->type,
-                    'amount' => $pattern->amount,
-                    'description' => $pattern->description.' (Recurring)',
-                    'transaction_date' => $nextDueDate->copy(),
-                    'category_id' => $pattern->category_id,
+                    'id'                     => null,
+                    'account_id'             => $pattern->account_id,
+                    'type'                   => $pattern->type,
+                    'amount'                 => $pattern->amount,
+                    'description'            => $pattern->description.' (Recurring)',
+                    'transaction_date'       => $nextDueDate->copy(),
+                    'category_id'            => $pattern->category_id,
                     'transfer_to_account_id' => $pattern->transfer_to_account_id,
-                    'recurring_pattern_id' => $pattern->id,
-                    'account' => $pattern->account,
-                    'category' => $pattern->category,
-                    'transferToAccount' => $pattern->transferToAccount,
-                    'recurringPattern' => $pattern,
-                    'signed_amount' => match ($pattern->type) {
-                        'income' => (float) $pattern->amount,
-                        'expense' => -(float) $pattern->amount,
+                    'recurring_pattern_id'   => $pattern->id,
+                    'account'                => $pattern->account,
+                    'category'               => $pattern->category,
+                    'transferToAccount'      => $pattern->transferToAccount,
+                    'recurringPattern'       => $pattern,
+                    'signed_amount'          => match ($pattern->type) {
+                        'income'   => (float) $pattern->amount,
+                        'expense'  => -(float) $pattern->amount,
                         'transfer' => -(float) $pattern->amount,
-                        default => 0
+                        default    => 0
                     },
                     'is_projected' => true,
                 ]);
 
                 // Calculate next occurrence
                 $nextDueDate = match ($pattern->frequency) {
-                    'daily' => $nextDueDate->addDays($pattern->frequency_interval),
-                    'weekly' => $nextDueDate->addWeeks($pattern->frequency_interval),
+                    'daily'     => $nextDueDate->addDays($pattern->frequency_interval),
+                    'weekly'    => $nextDueDate->addWeeks($pattern->frequency_interval),
                     'bi-weekly' => $nextDueDate->addWeeks(2 * $pattern->frequency_interval),
-                    'monthly' => $nextDueDate->addMonths($pattern->frequency_interval),
-                    'yearly' => $nextDueDate->addYears($pattern->frequency_interval),
-                    default => $nextDueDate->addDays($pattern->frequency_interval)
+                    'monthly'   => $nextDueDate->addMonths($pattern->frequency_interval),
+                    'yearly'    => $nextDueDate->addYears($pattern->frequency_interval),
+                    default     => $nextDueDate->addDays($pattern->frequency_interval)
                 };
             }
         }
@@ -151,16 +153,16 @@ class RecurringService
         foreach ($patterns as $pattern) {
             if ($this->isPatternDueOnDate($pattern, $date)) {
                 $transactions->push((object) [
-                    'type' => $pattern->type,
-                    'amount' => $pattern->amount,
-                    'description' => $pattern->description.' (Recurring)',
-                    'category' => $pattern->category,
+                    'type'              => $pattern->type,
+                    'amount'            => $pattern->amount,
+                    'description'       => $pattern->description.' (Recurring)',
+                    'category'          => $pattern->category,
                     'transferToAccount' => $pattern->transferToAccount,
-                    'signed_amount' => match ($pattern->type) {
-                        'income' => (float) $pattern->amount,
-                        'expense' => -(float) $pattern->amount,
+                    'signed_amount'     => match ($pattern->type) {
+                        'income'   => (float) $pattern->amount,
+                        'expense'  => -(float) $pattern->amount,
                         'transfer' => -(float) $pattern->amount,
-                        default => 0
+                        default    => 0
                     },
                     'is_projected' => true,
                 ]);
@@ -181,19 +183,19 @@ class RecurringService
             }
 
             $occurrences->push([
-                'date' => $nextDate->copy(),
-                'amount' => $pattern->amount,
-                'description' => $pattern->description,
+                'date'             => $nextDate->copy(),
+                'amount'           => $pattern->amount,
+                'description'      => $pattern->description,
                 'is_past_end_date' => $pattern->end_date && $nextDate->isAfter($pattern->end_date),
             ]);
 
             $nextDate = match ($pattern->frequency) {
-                'daily' => $nextDate->addDays($pattern->frequency_interval),
-                'weekly' => $nextDate->addWeeks($pattern->frequency_interval),
+                'daily'     => $nextDate->addDays($pattern->frequency_interval),
+                'weekly'    => $nextDate->addWeeks($pattern->frequency_interval),
                 'bi-weekly' => $nextDate->addWeeks(2 * $pattern->frequency_interval),
-                'monthly' => $nextDate->addMonths($pattern->frequency_interval),
-                'yearly' => $nextDate->addYears($pattern->frequency_interval),
-                default => $nextDate->addDays($pattern->frequency_interval)
+                'monthly'   => $nextDate->addMonths($pattern->frequency_interval),
+                'yearly'    => $nextDate->addYears($pattern->frequency_interval),
+                default     => $nextDate->addDays($pattern->frequency_interval)
             };
         }
 
@@ -233,12 +235,12 @@ class RecurringService
         $daysDiff = $startDate->diffInDays($date);
 
         return match ($pattern->frequency) {
-            'daily' => $daysDiff % $pattern->frequency_interval === 0,
-            'weekly' => $daysDiff % (7 * $pattern->frequency_interval) === 0 && $date->dayOfWeek === $startDate->dayOfWeek,
+            'daily'     => $daysDiff % $pattern->frequency_interval === 0,
+            'weekly'    => $daysDiff % (7 * $pattern->frequency_interval) === 0 && $date->dayOfWeek === $startDate->dayOfWeek,
             'bi-weekly' => $daysDiff % (14 * $pattern->frequency_interval) === 0 && $date->dayOfWeek === $startDate->dayOfWeek,
-            'monthly' => $date->day === $startDate->day && $daysDiff >= (30 * $pattern->frequency_interval),
-            'yearly' => $date->month === $startDate->month && $date->day === $startDate->day && $daysDiff >= (365 * $pattern->frequency_interval),
-            default => false
+            'monthly'   => $date->day === $startDate->day && $daysDiff >= (30 * $pattern->frequency_interval),
+            'yearly'    => $date->month === $startDate->month && $date->day === $startDate->day && $daysDiff >= (365 * $pattern->frequency_interval),
+            default     => false
         };
     }
 }
