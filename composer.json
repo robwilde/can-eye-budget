@@ -20,7 +20,7 @@
         "spatie/laravel-ray": "^1.40"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-latest",
+        "barryvdh/laravel-debugbar": "^3.15",
         "fakerphp/faker": "^1.24.1",
         "laravel/pail": "^1.2.3",
         "laravel/pint": "^1.24",
@@ -28,7 +28,8 @@
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8.2",
         "pestphp/pest": "^3.8.2",
-        "pestphp/pest-plugin-laravel": "^3.2"
+        "pestphp/pest-plugin-laravel": "^3.2",
+        "roave/security-advisories": "dev-latest"
     },
     "autoload": {
         "psr-4": {

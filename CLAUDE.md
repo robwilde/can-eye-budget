@@ -6,6 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a personal budgeting application built with Laravel 12 and PHP 8.4, using the Livewire starter kit with Flux UI components. The application features calendar-based views for income/expenses, projections, and bank reconciliation capabilities.
 
+## Documentation References
+
+- The PEST PHP Docs are available for reference: https://context7.com/pestphp/docs/llms.txt
+- Debug tools documentation:
+  - `barryvdh/laravel-debugbar` reference: http://phpdebugbar.com/docs/all.html
+  - `spatie\laravel-ray` reference: https://context7.com/spatie/myray.app/llms.txt
+
 ## Essential Commands
 
 ### Development
