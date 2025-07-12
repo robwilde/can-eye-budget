@@ -12,7 +12,15 @@ class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-
+            'name' => $this->faker->randomElement([
+                'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
+                'Bills & Utilities', 'Healthcare', 'Travel', 'Education',
+                'Investment', 'Income', 'Business', 'Gifts & Donations',
+            ]),
+            'color' => $this->faker->hexColor(),
+            'icon' => $this->faker->randomElement([
+                'shopping-cart', 'car', 'home', 'heart', 'star', 'gift',
+            ]),
         ];
     }
 }

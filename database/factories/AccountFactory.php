@@ -12,7 +12,10 @@ class AccountFactory extends Factory
     public function definition(): array
     {
         return [
-
+            'name' => $this->faker->randomElement(['Checking', 'Savings', 'Credit Card']),
+            'type' => $this->faker->randomElement(['checking', 'savings', 'credit']),
+            'initial_balance' => $this->faker->randomFloat(2, 0, 10000),
+            'currency' => 'USD',
         ];
     }
 }
