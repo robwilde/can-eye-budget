@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Livewire;
 
+use App\Helpers\CalendarHelper;
 use App\Models\Account;
 use App\Services\ProjectionService;
-use App\Services\TransactionService;
 use Carbon\Carbon;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
-use Illuminate\Contracts\View\View;
 use Livewire\Component;
 
 final class CalendarView extends Component
@@ -20,6 +20,13 @@ final class CalendarView extends Component
     public Carbon $currentDate;
 
     public ?int $selectedAccountId = null;
+
+    private ProjectionService $projectionService;
+
+    public function boot(ProjectionService $projectionService): void
+    {
+        $this->projectionService = $projectionService;
+    }
 
     public function mount(): void
     {
@@ -68,12 +75,12 @@ final class CalendarView extends Component
     public function projections(): array
     {
         if ($this->view === 'year') {
-            return app(ProjectionService::class)->calculateMonthlyProjections(auth()->user());
+            return $this->projectionService->calculateMonthlyProjections(auth()->user());
         }
 
         $dateRange = $this->getDateRange();
 
-        return app(ProjectionService::class)->calculateProjections(
+        return $this->projectionService->calculateProjections(
             auth()->user(),
             $dateRange['end'],
             $this->selectedAccount
@@ -87,8 +94,8 @@ final class CalendarView extends Component
 
         foreach ($this->accounts as $account) {
             if ($this->selectedAccount) {
-                $balance = $this->selectedAccount->id === $account->id 
-                    ? $account->getCurrentBalance() 
+                $balance = $this->selectedAccount->id === $account->id
+                    ? $account->getCurrentBalance()
                     : 0;
             } else {
                 $balance = $account->getCurrentBalance();
@@ -116,22 +123,12 @@ final class CalendarView extends Component
 
     public function previousPeriod(): void
     {
-        $this->currentDate = match ($this->view) {
-            'day'   => $this->currentDate->subDay(),
-            'week'  => $this->currentDate->subWeek(),
-            'year'  => $this->currentDate->subYear(),
-            default => $this->currentDate->subMonth(),
-        };
+        $this->currentDate = CalendarHelper::getPreviousPeriod($this->currentDate, $this->view);
     }
 
     public function nextPeriod(): void
     {
-        $this->currentDate = match ($this->view) {
-            'day'   => $this->currentDate->addDay(),
-            'week'  => $this->currentDate->addWeek(),
-            'year'  => $this->currentDate->addYear(),
-            default => $this->currentDate->addMonth(),
-        };
+        $this->currentDate = CalendarHelper::getNextPeriod($this->currentDate, $this->view);
     }
 
     public function goToToday(): void
@@ -141,12 +138,7 @@ final class CalendarView extends Component
 
     public function getViewTitle(): string
     {
-        return match ($this->view) {
-            'day'   => $this->currentDate->format('F j, Y'),
-            'week'  => 'Week of '.$this->currentDate->copy()->startOfWeek()->format('M j').' - '.$this->currentDate->copy()->endOfWeek()->format('M j, Y'),
-            'year'  => $this->currentDate->format('Y'),
-            default => $this->currentDate->format('F Y'),
-        };
+        return CalendarHelper::getViewTitle($this->currentDate, $this->view);
     }
 
     public function openTransactionForm(?int $transactionId = null): void
@@ -157,6 +149,11 @@ final class CalendarView extends Component
     public function openTransactionFormForDate(string $date): void
     {
         $this->dispatch('open-transaction-form-for-date', $date);
+    }
+
+    public function render(): View
+    {
+        return view('livewire.calendar-view');
     }
 
     protected function getListeners(): array
@@ -170,38 +167,15 @@ final class CalendarView extends Component
 
     private function getDateRange(): array
     {
-        $date = $this->currentDate->copy();
+        return CalendarHelper::getDateRange($this->currentDate, $this->view);
 
-        return match ($this->view) {
-            'day' => [
-                'start' => $date->startOfDay(),
-                'end'   => $date->copy()->endOfDay(),
-            ],
-            'week' => [
-                'start' => $date->startOfWeek(),
-                'end'   => $date->copy()->endOfWeek(),
-            ],
-            'year' => [
-                'start' => $date->startOfYear(),
-                'end'   => $date->copy()->endOfYear(),
-            ],
-            default => [
-                'start' => $date->startOfMonth(),
-                'end'   => $date->copy()->endOfMonth(),
-            ],
-        };
     }
 
     private function getProjectedBalance(Account $account): float
     {
         $dateRange = $this->getDateRange();
-        $projections = app(ProjectionService::class)->calculateAccountProjections($account, $dateRange['end']);
+        $projections = $this->projectionService->calculateAccountProjections($account, $dateRange['end']);
 
         return end($projections)['balance'] ?? $account->getCurrentBalance();
-    }
-
-    public function render(): View
-    {
-        return view('livewire.calendar-view');
     }
 }

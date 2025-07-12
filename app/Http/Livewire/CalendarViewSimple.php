@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Livewire;
 
+use App\Helpers\CalendarHelper;
 use Carbon\Carbon;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -105,22 +106,12 @@ final class CalendarViewSimple extends Component
 
     public function previousPeriod(): void
     {
-        $this->currentDate = match ($this->view) {
-            'day'   => $this->currentDate->subDay(),
-            'week'  => $this->currentDate->subWeek(),
-            'year'  => $this->currentDate->subYear(),
-            default => $this->currentDate->subMonth(),
-        };
+        $this->currentDate = CalendarHelper::getPreviousPeriod($this->currentDate, $this->view);
     }
 
     public function nextPeriod(): void
     {
-        $this->currentDate = match ($this->view) {
-            'day'   => $this->currentDate->addDay(),
-            'week'  => $this->currentDate->addWeek(),
-            'year'  => $this->currentDate->addYear(),
-            default => $this->currentDate->addMonth(),
-        };
+        $this->currentDate = CalendarHelper::getNextPeriod($this->currentDate, $this->view);
     }
 
     public function goToToday(): void
@@ -130,16 +121,7 @@ final class CalendarViewSimple extends Component
 
     public function getViewTitle(): string
     {
-        return match ($this->view) {
-            'day'  => $this->currentDate->format('F j, Y'),
-            'week' => 'Week of '.$this->currentDate
-                    ->startOfWeek()
-                    ->format('M j').' - '.$this->currentDate
-                    ->endOfWeek()
-                    ->format('M j, Y'),
-            'year'  => $this->currentDate->format('Y'),
-            default => $this->currentDate->format('F Y'),
-        };
+        return CalendarHelper::getViewTitle($this->currentDate, $this->view);
     }
 
     public function openTransactionForm(?int $transactionId = null): void
@@ -169,25 +151,7 @@ final class CalendarViewSimple extends Component
 
     private function getDateRange(): array
     {
-        $date = $this->currentDate->copy();
+        return CalendarHelper::getDateRange($this->currentDate, $this->view);
 
-        return match ($this->view) {
-            'day' => [
-                'start' => $date->startOfDay(),
-                'end'   => $date->copy()->endOfDay(),
-            ],
-            'week' => [
-                'start' => $date->startOfWeek(),
-                'end'   => $date->copy()->endOfWeek(),
-            ],
-            'year' => [
-                'start' => $date->startOfYear(),
-                'end'   => $date->copy()->endOfYear(),
-            ],
-            default => [
-                'start' => $date->startOfMonth(),
-                'end'   => $date->copy()->endOfMonth(),
-            ],
-        };
     }
 }

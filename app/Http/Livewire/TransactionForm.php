@@ -55,6 +55,13 @@ final class TransactionForm extends Component
 
     public string $newCategoryColor = '#3b82f6';
 
+    private TransactionService $transactionService;
+
+    public function boot(TransactionService $transactionService): void
+    {
+        $this->transactionService = $transactionService;
+    }
+
     public function mount(?Transaction $transaction = null): void
     {
         $this->transaction = $transaction;
@@ -217,13 +224,11 @@ final class TransactionForm extends Component
                 is_recurring       : Optional::create(),
             );
 
-            $transactionService = app(TransactionService::class);
-
             if ($this->mode === 'edit' && $this->transaction) {
-                $transactionService->updateTransaction($this->transaction, $transactionData);
+                $this->transactionService->updateTransaction($this->transaction, $transactionData);
                 $this->dispatch('transaction-updated', $this->transaction->id);
             } else {
-                $transaction = $transactionService->createTransaction(auth()->user(), $transactionData);
+                $transaction = $this->transactionService->createTransaction(auth()->user(), $transactionData);
                 $this->dispatch('transaction-created', $transaction->id);
             }
 
@@ -242,7 +247,7 @@ final class TransactionForm extends Component
         }
 
         try {
-            app(TransactionService::class)->deleteTransaction($this->transaction);
+            $this->transactionService->deleteTransaction($this->transaction);
             $this->dispatch('transaction-deleted', $this->transaction->id);
             $this->close();
 
