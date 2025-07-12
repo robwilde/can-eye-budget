@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
-use Livewire\Volt\Volt;
 
 Route::get('/', function () {
     return view('welcome');
@@ -16,9 +15,18 @@ Route::view('dashboard', 'dashboard')
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
-    Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
-    Volt::route('settings/password', 'settings.password')->name('settings.password');
-    Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
+    // Settings routes - these will need traditional Livewire components
+    Route::get('settings/profile', function () {
+        return view('settings.profile');
+    })->name('settings.profile');
+
+    Route::get('settings/password', function () {
+        return view('settings.password');
+    })->name('settings.password');
+
+    Route::get('settings/appearance', function () {
+        return view('settings.appearance');
+    })->name('settings.appearance');
 });
 
 require __DIR__.'/auth.php';
