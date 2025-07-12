@@ -87,9 +87,9 @@ tail -20 storage/logs/laravel.log  # View last 20 lines
 ### Key Components
 
 #### Livewire Integration
-- Uses **Livewire Volt** for single-file components in `resources/views/livewire/`
-- Volt routes defined in `routes/web.php` using `Volt::route()`
-- VoltServiceProvider mounts both `livewire/` and `pages/` directories
+- Uses **Traditional Livewire Components** in `app/Livewire/`
+- Standard Laravel routes for page views in `routes/web.php`
+- Blade templates stored separately in `resources/views/`
 
 #### UI Framework
 - **Flux UI** components for consistent design system
@@ -103,8 +103,8 @@ tail -20 storage/logs/laravel.log  # View last 20 lines
 
 ### File Structure Patterns
 ```
-app/Http/Livewire/          # Traditional Livewire components
-resources/views/livewire/   # Volt single-file components
+app/Livewire/              # Traditional Livewire components
+resources/views/livewire/   # Blade templates for Livewire components
 resources/views/components/ # Blade components
 resources/views/flux/       # Custom Flux UI components
 tests/Feature/             # Feature tests with RefreshDatabase
