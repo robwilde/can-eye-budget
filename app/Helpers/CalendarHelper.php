@@ -1,4 +1,5 @@
 <?php
+
 /** @noinspection CallableParameterUseCaseInTypeContextInspection */
 
 declare(strict_types=1);
