@@ -182,10 +182,8 @@
                     <flux:checkbox wire:model="reconciled" label="Mark as reconciled"/>
                 </flux:field>
             </div>
-        </flux:modal.body>
-
-        <flux:modal.footer>
-            <div class="flex justify-between">
+            {{-- Modal Footer Actions --}}
+            <div class="flex justify-between pt-6 mt-6 border-t">
                 <div>
                     @if($mode === 'edit')
                         <flux:button
@@ -206,6 +204,6 @@
                     </flux:button>
                 </div>
             </div>
-        </flux:modal.footer>
+        </flux:modal.body>
     </flux:modal>
 </div>
