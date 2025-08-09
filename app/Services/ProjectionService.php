@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Account;
@@ -8,7 +10,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
-class ProjectionService
+final class ProjectionService
 {
     private RecurringService $recurringService;
 
@@ -39,12 +41,12 @@ class ProjectionService
             $dailyBalance = $this->calculateDailyBalance($account, $currentDate, $runningBalance);
 
             $projections[] = [
-                'date' => $currentDate->copy(),
-                'balance' => $dailyBalance['balance'],
-                'income' => $dailyBalance['income'],
-                'expenses' => $dailyBalance['expenses'],
-                'net' => $dailyBalance['net'],
-                'is_negative' => $dailyBalance['balance'] < 0,
+                'date'         => $currentDate->copy(),
+                'balance'      => $dailyBalance['balance'],
+                'income'       => $dailyBalance['income'],
+                'expenses'     => $dailyBalance['expenses'],
+                'net'          => $dailyBalance['net'],
+                'is_negative'  => $dailyBalance['balance'] < 0,
                 'transactions' => $dailyBalance['transactions'],
             ];
 
@@ -74,11 +76,11 @@ class ProjectionService
             $endOfMonth = $month->copy()->endOfMonth();
 
             $monthData = [
-                'month' => $month->format('Y-m'),
-                'month_name' => $month->format('F Y'),
-                'accounts' => [],
-                'total_balance' => 0,
-                'total_income' => 0,
+                'month'          => $month->format('Y-m'),
+                'month_name'     => $month->format('F Y'),
+                'accounts'       => [],
+                'total_balance'  => 0,
+                'total_income'   => 0,
                 'total_expenses' => 0,
             ];
 
@@ -88,9 +90,9 @@ class ProjectionService
 
                 if ($lastDay) {
                     $monthData['accounts'][$account->id] = [
-                        'name' => $account->name,
-                        'balance' => $lastDay['balance'],
-                        'income' => collect($accountProjections)->sum('income'),
+                        'name'     => $account->name,
+                        'balance'  => $lastDay['balance'],
+                        'income'   => collect($accountProjections)->sum('income'),
                         'expenses' => collect($accountProjections)->sum('expenses'),
                     ];
 
@@ -149,10 +151,10 @@ class ProjectionService
         $allTransactions = $confirmedTransactions
             ->merge($incomingTransfers->map(function ($transfer) {
                 return (object) [
-                    'type' => 'transfer_in',
-                    'amount' => $transfer->amount,
-                    'description' => "Transfer from {$transfer->account->name}",
-                    'category' => $transfer->category,
+                    'type'          => 'transfer_in',
+                    'amount'        => $transfer->amount,
+                    'description'   => "Transfer from {$transfer->account->name}",
+                    'category'      => $transfer->category,
                     'signed_amount' => (float) $transfer->amount,
                 ];
             }))
@@ -174,10 +176,10 @@ class ProjectionService
         $balance = $startingBalance + $net;
 
         return [
-            'balance' => $balance,
-            'income' => $income + $transfersIn,
-            'expenses' => $expenses,
-            'net' => $net,
+            'balance'      => $balance,
+            'income'       => $income + $transfersIn,
+            'expenses'     => $expenses,
+            'net'          => $net,
             'transactions' => $allTransactions,
         ];
     }

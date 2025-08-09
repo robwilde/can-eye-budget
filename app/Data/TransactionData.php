@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data;
 
 use App\Models\Account;
@@ -15,7 +17,7 @@ use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Optional;
 
-class TransactionData extends Data
+final class TransactionData extends Data
 {
     public function __construct(
         public Optional|int $id,
@@ -65,10 +67,10 @@ class TransactionData extends Data
 
         // Compute derived values
         $this->signed_amount = match ($this->type) {
-            'income' => $this->amount,
-            'expense' => -$this->amount,
+            'income'   => $this->amount,
+            'expense'  => -$this->amount,
             'transfer' => -$this->amount,
-            default => 0
+            default    => 0
         };
 
         $this->is_transfer = $this->type === 'transfer';
@@ -100,16 +102,16 @@ class TransactionData extends Data
     public function toCreateArray(): array
     {
         return [
-            'account_id' => $this->account_id,
-            'type' => $this->type,
-            'amount' => $this->amount,
-            'description' => $this->description,
-            'transaction_date' => $this->transaction_date->toDateString(),
-            'category_id' => $this->category_id instanceof Optional ? null : $this->category_id,
+            'account_id'             => $this->account_id,
+            'type'                   => $this->type,
+            'amount'                 => $this->amount,
+            'description'            => $this->description,
+            'transaction_date'       => $this->transaction_date->toDateString(),
+            'category_id'            => $this->category_id instanceof Optional ? null : $this->category_id,
             'transfer_to_account_id' => $this->transferToAccountId instanceof Optional ? null : $this->transferToAccountId,
-            'recurring_pattern_id' => $this->recurringPatternId instanceof Optional ? null : $this->recurringPatternId,
-            'import_id' => $this->importId instanceof Optional ? null : $this->importId,
-            'reconciled' => $this->reconciled instanceof Optional ? false : $this->reconciled,
+            'recurring_pattern_id'   => $this->recurringPatternId instanceof Optional ? null : $this->recurringPatternId,
+            'import_id'              => $this->importId instanceof Optional ? null : $this->importId,
+            'reconciled'             => $this->reconciled instanceof Optional ? false : $this->reconciled,
         ];
     }
 

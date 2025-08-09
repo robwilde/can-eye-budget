@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Data\TransactionData;
@@ -10,7 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
-class TransactionService
+final class TransactionService
 {
     public function createTransaction(User $user, TransactionData $transactionData): Transaction
     {
@@ -145,14 +147,14 @@ class TransactionService
         }
 
         Transaction::create([
-            'account_id' => $targetAccount->id,
-            'type' => 'income',
-            'amount' => $sourceTransaction->amount,
-            'description' => "Transfer from {$sourceTransaction->account->name}: {$sourceTransaction->description}",
-            'transaction_date' => $sourceTransaction->transaction_date,
-            'category_id' => $sourceTransaction->category_id,
+            'account_id'           => $targetAccount->id,
+            'type'                 => 'income',
+            'amount'               => $sourceTransaction->amount,
+            'description'          => "Transfer from {$sourceTransaction->account->name}: {$sourceTransaction->description}",
+            'transaction_date'     => $sourceTransaction->transaction_date,
+            'category_id'          => $sourceTransaction->category_id,
             'recurring_pattern_id' => $sourceTransaction->recurring_pattern_id,
-            'import_id' => $sourceTransaction->import_id,
+            'import_id'            => $sourceTransaction->import_id,
         ]);
     }
 

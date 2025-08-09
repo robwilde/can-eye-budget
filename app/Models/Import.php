@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -7,7 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Import extends Model
+final class Import extends Model
 {
     use HasFactory;
 
@@ -20,8 +22,8 @@ class Import extends Model
     ];
 
     protected $casts = [
-        'imported_at' => 'datetime',
-        'row_count' => 'integer',
+        'imported_at'   => 'datetime',
+        'row_count'     => 'integer',
         'matched_count' => 'integer',
     ];
 

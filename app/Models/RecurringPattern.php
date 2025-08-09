@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Carbon\Carbon;
@@ -8,7 +10,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class RecurringPattern extends Model
+final class RecurringPattern extends Model
 {
     use HasFactory;
 
@@ -27,11 +29,11 @@ class RecurringPattern extends Model
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
-        'start_date' => 'date',
-        'end_date' => 'date',
+        'amount'              => 'decimal:2',
+        'start_date'          => 'date',
+        'end_date'            => 'date',
         'last_generated_date' => 'date',
-        'is_active' => 'boolean',
+        'is_active'           => 'boolean',
     ];
 
     public function account(): BelongsTo
@@ -73,12 +75,12 @@ class RecurringPattern extends Model
         $lastGenerated = $this->last_generated_date ?? $this->start_date;
 
         return match ($this->frequency) {
-            'daily' => $lastGenerated->addDays($this->frequency_interval),
-            'weekly' => $lastGenerated->addWeeks($this->frequency_interval),
+            'daily'     => $lastGenerated->addDays($this->frequency_interval),
+            'weekly'    => $lastGenerated->addWeeks($this->frequency_interval),
             'bi-weekly' => $lastGenerated->addWeeks(2 * $this->frequency_interval),
-            'monthly' => $lastGenerated->addMonths($this->frequency_interval),
-            'yearly' => $lastGenerated->addYears($this->frequency_interval),
-            default => $lastGenerated->addDays($this->frequency_interval)
+            'monthly'   => $lastGenerated->addMonths($this->frequency_interval),
+            'yearly'    => $lastGenerated->addYears($this->frequency_interval),
+            default     => $lastGenerated->addDays($this->frequency_interval)
         };
     }
 
@@ -100,14 +102,14 @@ class RecurringPattern extends Model
     public function createTransaction(): Transaction
     {
         $transaction = Transaction::create([
-            'account_id' => $this->account_id,
-            'type' => $this->type,
-            'amount' => $this->amount,
-            'description' => $this->description,
-            'transaction_date' => $this->getNextDueDate(),
-            'category_id' => $this->category_id,
+            'account_id'             => $this->account_id,
+            'type'                   => $this->type,
+            'amount'                 => $this->amount,
+            'description'            => $this->description,
+            'transaction_date'       => $this->getNextDueDate(),
+            'category_id'            => $this->category_id,
             'transfer_to_account_id' => $this->transfer_to_account_id,
-            'recurring_pattern_id' => $this->id,
+            'recurring_pattern_id'   => $this->id,
         ]);
 
         $this->update(['last_generated_date' => $this->getNextDueDate()]);

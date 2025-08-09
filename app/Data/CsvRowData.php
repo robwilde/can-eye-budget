@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Data;
 
 use App\Models\Category;
@@ -9,7 +11,7 @@ use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 use Spatie\LaravelData\Data;
 use Spatie\LaravelData\Optional;
 
-class CsvRowData extends Data
+final class CsvRowData extends Data
 {
     public function __construct(
         public array $raw_data,

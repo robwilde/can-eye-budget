@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Category;
@@ -8,7 +10,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 
-class CategoryMatchingService
+final class CategoryMatchingService
 {
     public function findMatchingCategory(User $user, string $description, float $amount): ?Category
     {
@@ -32,9 +34,9 @@ class CategoryMatchingService
         foreach ($rules as $rule) {
             if ($rule->matches($description, $amount)) {
                 $suggestions->push([
-                    'category' => $rule->category,
+                    'category'   => $rule->category,
                     'confidence' => $this->calculateConfidence($rule, $description, $amount),
-                    'reason' => $this->getMatchReason($rule),
+                    'reason'     => $this->getMatchReason($rule),
                 ]);
             }
         }
@@ -64,10 +66,10 @@ class CategoryMatchingService
             if (! $existingRule) {
                 CategoryRule::create([
                     'category_id' => $category->id,
-                    'field' => 'description',
-                    'operator' => 'contains',
-                    'value' => $keyword,
-                    'priority' => $this->calculatePriority($keyword, $description),
+                    'field'       => 'description',
+                    'operator'    => 'contains',
+                    'value'       => $keyword,
+                    'priority'    => $this->calculatePriority($keyword, $description),
                 ]);
             }
         }
@@ -83,10 +85,10 @@ class CategoryMatchingService
             if (! $existingAmountRule) {
                 CategoryRule::create([
                     'category_id' => $category->id,
-                    'field' => 'amount',
-                    'operator' => 'equals',
-                    'value' => (string) $amount,
-                    'priority' => 2, // Lower priority than description rules
+                    'field'       => 'amount',
+                    'operator'    => 'equals',
+                    'value'       => (string) $amount,
+                    'priority'    => 2, // Lower priority than description rules
                 ]);
             }
         }
@@ -98,10 +100,10 @@ class CategoryMatchingService
     public function analyzeTransactionPatterns(User $user): array
     {
         $analysis = [
-            'uncategorized_count' => 0,
-            'auto_categorized_count' => 0,
+            'uncategorized_count'            => 0,
+            'auto_categorized_count'         => 0,
             'top_uncategorized_descriptions' => [],
-            'suggested_rules' => [],
+            'suggested_rules'                => [],
         ];
 
         // Get recent uncategorized transactions
@@ -130,9 +132,9 @@ class CategoryMatchingService
 
         foreach ($descriptionGroups as $normalizedDesc => $transactions) {
             $analysis['top_uncategorized_descriptions'][] = [
-                'description' => $normalizedDesc,
-                'count' => $transactions->count(),
-                'total_amount' => $transactions->sum('amount'),
+                'description'         => $normalizedDesc,
+                'count'               => $transactions->count(),
+                'total_amount'        => $transactions->sum('amount'),
                 'sample_transactions' => $transactions->take(3)->values(),
             ];
 
@@ -140,10 +142,10 @@ class CategoryMatchingService
             $keywords = $this->extractKeywords($normalizedDesc);
             foreach ($keywords as $keyword) {
                 $analysis['suggested_rules'][] = [
-                    'field' => 'description',
-                    'operator' => 'contains',
-                    'value' => $keyword,
-                    'frequency' => $transactions->count(),
+                    'field'              => 'description',
+                    'operator'           => 'contains',
+                    'value'              => $keyword,
+                    'frequency'          => $transactions->count(),
                     'suggested_category' => null, // User will need to set this
                 ];
             }
@@ -160,10 +162,10 @@ class CategoryMatchingService
             if (isset($suggestion['category_id'])) {
                 $rule = CategoryRule::create([
                     'category_id' => $suggestion['category_id'],
-                    'field' => $suggestion['field'],
-                    'operator' => $suggestion['operator'],
-                    'value' => $suggestion['value'],
-                    'priority' => $suggestion['priority'] ?? 1,
+                    'field'       => $suggestion['field'],
+                    'operator'    => $suggestion['operator'],
+                    'value'       => $suggestion['value'],
+                    'priority'    => $suggestion['priority'] ?? 1,
                 ]);
 
                 $createdRules->push($rule);
@@ -202,9 +204,9 @@ class CategoryMatchingService
 
             if ($similarity > 0.3) { // 30% similarity threshold
                 $fuzzyMatches->push([
-                    'category' => $category,
+                    'category'   => $category,
                     'confidence' => $similarity * 0.5, // Lower confidence for fuzzy matches
-                    'reason' => "Similar to category name: {$category->name}",
+                    'reason'     => "Similar to category name: {$category->name}",
                 ]);
             }
         }
@@ -215,10 +217,10 @@ class CategoryMatchingService
     private function calculateConfidence(CategoryRule $rule, string $description, float $amount): float
     {
         $baseConfidence = match ($rule->operator) {
-            'equals' => 1.0,
-            'contains' => 0.8,
+            'equals'      => 1.0,
+            'contains'    => 0.8,
             'starts_with' => 0.9,
-            'ends_with' => 0.7,
+            'ends_with'   => 0.7,
             'greater_than', 'less_than' => 0.6,
             default => 0.5
         };
@@ -228,7 +230,7 @@ class CategoryMatchingService
 
         // Adjust based on value length for description rules
         if ($rule->field === 'description') {
-            $valueLength = strlen($rule->value);
+            $valueLength = mb_strlen($rule->value);
             $lengthMultiplier = min(1.2, 1 + ($valueLength - 3) * 0.05);
             $baseConfidence *= $lengthMultiplier;
         }
@@ -239,13 +241,13 @@ class CategoryMatchingService
     private function getMatchReason(CategoryRule $rule): string
     {
         return match ($rule->operator) {
-            'equals' => "Exact match for {$rule->field}: '{$rule->value}'",
-            'contains' => "Contains '{$rule->value}' in {$rule->field}",
-            'starts_with' => "{$rule->field} starts with '{$rule->value}'",
-            'ends_with' => "{$rule->field} ends with '{$rule->value}'",
+            'equals'       => "Exact match for {$rule->field}: '{$rule->value}'",
+            'contains'     => "Contains '{$rule->value}' in {$rule->field}",
+            'starts_with'  => "{$rule->field} starts with '{$rule->value}'",
+            'ends_with'    => "{$rule->field} ends with '{$rule->value}'",
             'greater_than' => "{$rule->field} is greater than {$rule->value}",
-            'less_than' => "{$rule->field} is less than {$rule->value}",
-            default => "Matches rule for {$rule->field}"
+            'less_than'    => "{$rule->field} is less than {$rule->value}",
+            default        => "Matches rule for {$rule->field}"
         };
     }
 
@@ -260,7 +262,7 @@ class CategoryMatchingService
 
         foreach ($words as $word) {
             // Skip common words and very short words
-            if (strlen($word) >= 3 && ! in_array(strtolower($word), $this->getStopWords())) {
+            if (mb_strlen($word) >= 3 && ! in_array(mb_strtolower($word), $this->getStopWords())) {
                 $keywords[] = $word;
             }
         }
@@ -284,13 +286,13 @@ class CategoryMatchingService
         }
 
         // Clean up extra spaces and convert to lowercase
-        return trim(preg_replace('/\s+/', ' ', strtolower($normalized)));
+        return mb_trim(preg_replace('/\s+/', ' ', mb_strtolower($normalized)));
     }
 
     private function calculatePriority(string $keyword, string $fullDescription): int
     {
-        $keywordLength = strlen($keyword);
-        $descriptionLength = strlen($fullDescription);
+        $keywordLength = mb_strlen($keyword);
+        $descriptionLength = mb_strlen($fullDescription);
 
         // Longer keywords get higher priority (lower number)
         if ($keywordLength >= 8) {
@@ -305,13 +307,13 @@ class CategoryMatchingService
 
     private function isRoundAmount(float $amount): bool
     {
-        return $amount == round($amount) && $amount >= 10;
+        return $amount === round($amount) && $amount >= 10;
     }
 
     private function calculateSimilarity(string $str1, string $str2): float
     {
-        $str1 = strtolower($str1);
-        $str2 = strtolower($str2);
+        $str1 = mb_strtolower($str1);
+        $str2 = mb_strtolower($str2);
 
         similar_text($str1, $str2, $percent);
 

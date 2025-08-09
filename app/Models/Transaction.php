@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Carbon\Carbon;
@@ -8,24 +10,27 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
-class Transaction extends Model
+final class Transaction extends Model
 {
     use HasFactory, SoftDeletes;
 
     protected $fillable = [
+        'account_id',
         'type',
         'amount',
         'description',
         'transaction_date',
         'category_id',
         'transfer_to_account_id',
+        'recurring_pattern_id',
+        'import_id',
         'reconciled',
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
+        'amount'           => 'decimal:2',
         'transaction_date' => 'date',
-        'reconciled' => 'boolean',
+        'reconciled'       => 'boolean',
     ];
 
     public function account(): BelongsTo
@@ -94,10 +99,10 @@ class Transaction extends Model
     public function getSignedAmountAttribute(): float
     {
         return match ($this->type) {
-            'income' => (float) $this->amount,
-            'expense' => -(float) $this->amount,
+            'income'   => (float) $this->amount,
+            'expense'  => -(float) $this->amount,
             'transfer' => -(float) $this->amount,
-            default => 0
+            default    => 0
         };
     }
 

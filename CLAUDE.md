@@ -6,7 +6,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is a personal budgeting application built with Laravel 12 and PHP 8.4, using the Livewire starter kit with Flux UI components. The application features calendar-based views for income/expenses, projections, and bank reconciliation capabilities.
 
+## Documentation References
+
+- The PEST PHP Docs are available for reference: https://context7.com/pestphp/docs/llms.txt
+- Debug tools documentation:
+  - `barryvdh/laravel-debugbar` reference: http://phpdebugbar.com/docs/all.html
+  - `spatie\laravel-ray` reference: https://context7.com/spatie/myray.app/llms.txt
+
 ## Essential Commands
+
+### Development Environment Status
+**IMPORTANT**: The Laravel application is always running in a separate terminal session via `composer dev`. 
+- The dev server is typically running on http://localhost:8000
+- DO NOT start additional Laravel servers unless specifically requested
+- View logs in real-time using the existing terminal or `storage/logs/laravel.log`
+- Changes to PHP files are automatically detected (no restart needed)
+- Vite hot reload handles frontend asset changes
 
 ### Development
 ```bash
@@ -48,6 +63,19 @@ php artisan migrate:fresh --seed  # Fresh migration with seeding
 php artisan db:seed          # Run seeders
 ```
 
+### Debugging & Cache Management
+```bash
+# Clear caches when encountering issues
+php artisan cache:clear      # Clear application cache
+php artisan config:clear     # Clear configuration cache
+php artisan view:clear       # Clear compiled views
+php artisan route:clear      # Clear route cache
+
+# Check logs for errors
+tail -f storage/logs/laravel.log   # Follow log in real-time
+tail -20 storage/logs/laravel.log  # View last 20 lines
+```
+
 ## Architecture Overview
 
 ### Tech Stack
@@ -59,9 +87,9 @@ php artisan db:seed          # Run seeders
 ### Key Components
 
 #### Livewire Integration
-- Uses **Livewire Volt** for single-file components in `resources/views/livewire/`
-- Volt routes defined in `routes/web.php` using `Volt::route()`
-- VoltServiceProvider mounts both `livewire/` and `pages/` directories
+- Uses **Traditional Livewire Components** in `app/Livewire/`
+- Standard Laravel routes for page views in `routes/web.php`
+- Blade templates stored separately in `resources/views/`
 
 #### UI Framework
 - **Flux UI** components for consistent design system
@@ -75,8 +103,8 @@ php artisan db:seed          # Run seeders
 
 ### File Structure Patterns
 ```
-app/Http/Livewire/          # Traditional Livewire components
-resources/views/livewire/   # Volt single-file components
+app/Livewire/              # Traditional Livewire components
+resources/views/livewire/   # Blade templates for Livewire components
 resources/views/components/ # Blade components
 resources/views/flux/       # Custom Flux UI components
 tests/Feature/             # Feature tests with RefreshDatabase
@@ -132,9 +160,39 @@ The application follows a multi-entity budget model:
 - Volt for simplified Livewire development
 - PEST for expressive testing syntax
 
+## Development Progress Status
+
+### Current Status: Phase 3 Complete ✅
+
+**Overall Progress: ~30% Complete**
+
+| Phase | Status | Completion | Components |
+|-------|--------|------------|------------|
+| Phase 1 | ✅ Complete | 100% | Database, Models, Factories |
+| Phase 2 | ✅ Complete | 100% | Services, Repositories |
+| Phase 3 | ✅ Complete | 95% | UI Components, Livewire |
+| Phase 4 | ⏸️ Pending | 0% | Import & Reconciliation |
+| Phase 5 | ⏸️ Pending | 0% | Recurring & Projections |
+| Phase 6 | ⏸️ Pending | 0% | Reports & Analytics |
+| Phase 7 | ⏸️ Pending | 0% | Performance & Polish |
+| Phase 8 | ⏸️ Pending | 0% | Configuration & Commands |
+
+### Implemented Components
+
+#### ✅ Phase 3 Components (Complete)
+- **CalendarView** - Full calendar implementation with day/week/month/year views, navigation, balance calculations
+- **CalendarViewSimple** - Dashboard integration version
+- **TransactionForm** - Complete CRUD operations, category management, transfer support
+- **CategoryManager** - Full hierarchical category management with rules system
+
+#### ✅ Supporting Infrastructure
+- **Flux UI Extensions** - Custom modal, card, select components
+- **Testing Framework** - Comprehensive PEST tests for all components
+- **Event System** - Inter-component communication via Livewire events
+
 ## Development Task List
 
-### Phase 1: Foundation & Database
+### Phase 1: Foundation & Database ✅
 1. **Database Schema Implementation**
    - Create migrations for accounts, categories, transactions, recurring_patterns, imports, category_rules
    - Implement nested set model for categories (_lft, _rgt columns)
@@ -167,24 +225,36 @@ The application follows a multi-entity budget model:
    - `CategoryRepository` - Hierarchy queries and caching
    - `RecurringRepository` - Pattern management and generation
 
-### Phase 3: User Interface & Livewire Components
-6. **Main Dashboard & Calendar View**
-   - `CalendarView` Livewire component (today, week, month, year views)
-   - Interactive navigation with period switching
-   - Running balance calculations and display
-   - Visual indicators (green/red for income/expense)
+### Phase 3: User Interface & Livewire Components ✅
+6. **Main Dashboard & Calendar View** ✅ **COMPLETE**
+   - ✅ `CalendarView` Livewire component (today, week, month, year views)
+   - ✅ Interactive navigation with period switching
+   - ✅ Running balance calculations and display
+   - ✅ Visual indicators (green/red for income/expense)
+   - ✅ Individual view templates for day/week/month/year
+   - ✅ Dashboard integration with `CalendarViewSimple`
+   - ✅ Account filtering and transaction display
+   - ✅ Integration with ProjectionService
 
-7. **Transaction Management UI**
-   - `TransactionForm` component for add/edit operations
-   - Bulk operations interface
-   - Date picker with past/present/future support
-   - Category selection with dynamic creation
+7. **Transaction Management UI** ✅ **COMPLETE**
+   - ✅ `TransactionForm` component for add/edit operations
+   - ✅ Support for income, expense, and transfer transactions
+   - ✅ Date picker with past/present/future support
+   - ✅ Category selection with dynamic creation
+   - ✅ Modal-based interface with validation
+   - ✅ Transfer account selection and management
+   - ✅ Delete functionality and reconciliation support
+   - ⚠️ Bulk operations interface (future enhancement)
 
-8. **Category Management**
-   - `CategoryManager` component with hierarchical display
-   - Drag-drop for category organization
-   - Color and icon selection
-   - Category rules configuration interface
+8. **Category Management** ✅ **COMPLETE**
+   - ✅ `CategoryManager` component with hierarchical display
+   - ✅ Complete CRUD operations for categories
+   - ✅ Color and icon selection interface
+   - ✅ Category rules configuration interface
+   - ✅ Auto-categorization rule management
+   - ✅ Parent-child relationship management
+   - ✅ Visual hierarchy with indentation
+   - ✅ Transaction count and safety checks
 
 ### Phase 4: Import & Reconciliation Features
 9. **CSV Import System**
