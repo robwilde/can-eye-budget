@@ -65,7 +65,7 @@ final class TransactionForm extends Component
     public function mount(?Transaction $transaction = null): void
     {
         $this->transaction = $transaction;
-        $this->mode = $transaction ? 'edit' : 'create';
+        $this->mode = ($transaction && $transaction->exists) ? 'edit' : 'create';
         $this->transaction_date = Carbon::now()
                                         ->format('Y-m-d');
 
@@ -224,7 +224,7 @@ final class TransactionForm extends Component
                 is_recurring       : Optional::create(),
             );
 
-            if ($this->mode === 'edit' && $this->transaction) {
+            if ($this->mode === 'edit' && $this->transaction && $this->transaction->exists) {
                 $this->transactionService->updateTransaction($this->transaction, $transactionData);
                 $this->dispatch('transaction-updated', $this->transaction->id);
             } else {

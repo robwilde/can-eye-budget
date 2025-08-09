@@ -80,13 +80,13 @@ final class CategoryManager extends Component
 
     public function openCategoryForm(?Category $category = null): void
     {
-        $this->editingCategory = $category;
+        $this->editingCategory = ($category && $category->exists) ? $category : null;
 
-        if ($category) {
-            $this->categoryName = $category->name ?? '';
-            $this->parentCategoryId = $category->parent_id;
-            $this->categoryColor = $category->color ?? '';
-            $this->categoryIcon = $category->icon ?? '';
+        if ($this->editingCategory) {
+            $this->categoryName = $this->editingCategory->name ?? '';
+            $this->parentCategoryId = $this->editingCategory->parent_id;
+            $this->categoryColor = $this->editingCategory->color ?? '';
+            $this->categoryIcon = $this->editingCategory->icon ?? '';
         } else {
             $this->resetCategoryForm();
         }
@@ -111,7 +111,7 @@ final class CategoryManager extends Component
             'icon'      => $this->categoryIcon ?: null,
         ];
 
-        if ($this->editingCategory) {
+        if ($this->editingCategory && $this->editingCategory->exists) {
             $this->editingCategory->update($data);
 
             // Handle parent change (move node)
@@ -124,14 +124,13 @@ final class CategoryManager extends Component
                 }
             }
         } else {
-            $category = new Category($data);
-            $category->user_id = auth()->id();
-
             if ($this->parentCategoryId) {
                 $parent = Category::find($this->parentCategoryId);
-                $category->appendToNode($parent)->save();
-            } else {
+                $category = new Category($data);
+                $category->appendToNode($parent);
                 $category->save();
+            } else {
+                $category = Category::create($data);
             }
         }
 
@@ -163,15 +162,16 @@ final class CategoryManager extends Component
 
     public function openRuleForm(?CategoryRule $rule = null): void
     {
-        $this->editingRule = $rule;
-        $this->resetRuleForm();
+        $this->editingRule = ($rule && $rule->exists) ? $rule : null;
 
-        if ($rule) {
-            $this->ruleField = $rule->field ?? 'description';
-            $this->ruleOperator = $rule->operator ?? 'contains';
-            $this->ruleValue = $rule->value ?? '';
-            $this->rulePriority = $rule->priority ?? 0;
-            $this->ruleCategoryId = $rule->category_id;
+        if ($this->editingRule) {
+            $this->ruleField = $this->editingRule->field ?? 'description';
+            $this->ruleOperator = $this->editingRule->operator ?? 'contains';
+            $this->ruleValue = $this->editingRule->value ?? '';
+            $this->rulePriority = $this->editingRule->priority ?? 0;
+            $this->ruleCategoryId = $this->editingRule->category_id;
+        } else {
+            $this->resetRuleForm();
         }
 
         $this->showRuleForm = true;
@@ -195,7 +195,7 @@ final class CategoryManager extends Component
             'category_id' => $this->ruleCategoryId,
         ];
 
-        if ($this->editingRule) {
+        if ($this->editingRule && $this->editingRule->exists) {
             $this->editingRule->update($data);
         } else {
             CategoryRule::create($data);
