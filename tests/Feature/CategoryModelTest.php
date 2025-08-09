@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 use App\Models\Category;
 use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 test('can create category directly', function () {
     $user = User::factory()
-        ->create();
+                ->create();
 
     $category = Category::create([
         'user_id' => $user->id,

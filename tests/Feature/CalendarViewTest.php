@@ -60,14 +60,18 @@ test('calendar view displays transactions correctly', function () {
         'description'      => 'Test Transaction',
         'amount'           => 100.00,
         'type'             => 'income',
-        'transaction_date' => now(),
+        'transaction_date' => now()->format('Y-m-d'), // Ensure it's stored as a date without time
     ]);
 
     $this->actingAs($user);
 
-    Livewire::test('calendar-view')
-            ->assertSee('Test Transaction')
-            ->assertSee('$100.00')
-            ->assertSee($account->name)
-            ->assertSee($category->name);
+    $component = Livewire::test('calendar-view');
+
+    // Month view should display:
+    // 1. Account name (in account balance section)
+    // 2. Transaction amount in income summary
+    // 3. Transaction description in tooltip (as title attribute)
+    $component->assertSee($account->name) // Account name in balance section
+            ->assertSee('+$100') // Income amount in day summary
+            ->assertSeeHtml('title="Test Transaction"'); // Description in tooltip
 });

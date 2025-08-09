@@ -30,7 +30,6 @@ test('category manager can create a new category', function () {
                          ->set('categoryName', 'Test Category')
                          ->call('saveCategory');
 
-    // Check for validation errors
     $component->assertHasNoErrors();
     $component->assertDispatched('category-saved');
 
@@ -177,12 +176,19 @@ test('category manager can edit categorization rules', function () {
 
     $this->actingAs($user);
 
-    Livewire::test('category-manager')
-            ->call('openRuleForm', $rule->id)
+    $component = Livewire::test('category-manager')
+            ->call('openRuleForm', $rule)
             ->set('ruleValue', 'New Value')
             ->set('rulePriority', 5)
-            ->call('saveRule')
-            ->assertDispatched('rule-saved');
+            ->call('saveRule');
+
+    // Debug: Check for any errors
+    $errors = $component->instance()->getErrorBag();
+    if ($errors->count() > 0) {
+        dump('Component errors:', $errors->toArray());
+    }
+
+    $component->assertDispatched('rule-saved');
 
     $rule->refresh();
     expect($rule->value)
