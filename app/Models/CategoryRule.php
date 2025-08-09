@@ -13,6 +13,7 @@ final class CategoryRule extends Model
     use HasFactory;
 
     protected $fillable = [
+        'category_id',
         'field',
         'operator',
         'value',
@@ -23,29 +24,9 @@ final class CategoryRule extends Model
         'priority' => 'integer',
     ];
 
-    public static function findMatchingCategory(string $description, float $amount): ?Category
-    {
-        $rules = self::with('category')
-            ->byPriority()
-            ->get();
-
-        foreach ($rules as $rule) {
-            if ($rule->matches($description, $amount)) {
-                return $rule->category;
-            }
-        }
-
-        return null;
-    }
-
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
-    }
-
-    public function scopeByPriority($query)
-    {
-        return $query->orderBy('priority', 'asc');
     }
 
     public function matches(string $description, float $amount): bool
