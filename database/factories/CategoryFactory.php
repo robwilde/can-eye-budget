@@ -23,7 +23,7 @@ final class CategoryFactory extends Factory
             ]),
             'color' => $this->faker->hexColor(),
             'icon'  => $this->faker->randomElement([
-                'shopping-cart', 'home', 'heart', 'star', 'gift', 'cash',
+                'shopping-cart', 'home', 'heart', 'star', 'gift', 'banknotes',
             ]),
         ];
     }
