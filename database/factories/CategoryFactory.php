@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\Category;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 final class CategoryFactory extends Factory
@@ -14,14 +15,15 @@ final class CategoryFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => $this->faker->randomElement([
+            'user_id' => User::factory(),
+            'name'    => $this->faker->randomElement([
                 'Food & Dining', 'Transportation', 'Shopping', 'Entertainment',
                 'Bills & Utilities', 'Healthcare', 'Travel', 'Education',
                 'Investment', 'Income', 'Business', 'Gifts & Donations',
             ]),
             'color' => $this->faker->hexColor(),
             'icon'  => $this->faker->randomElement([
-                'shopping-cart', 'car', 'home', 'heart', 'star', 'gift',
+                'shopping-cart', 'home', 'heart', 'star', 'gift', 'cash',
             ]),
         ];
     }
