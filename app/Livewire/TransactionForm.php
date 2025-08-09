@@ -73,11 +73,11 @@ final class TransactionForm extends Component
             $this->account_id = $transaction->account_id;
             $this->type = $transaction->type ?? 'expense';
             $this->amount = (float) $transaction->amount;
-            $this->description = $transaction->description;
-            $this->transaction_date = $transaction->transaction_date->format('Y-m-d');
+            $this->description = $transaction->description ?? '';
+            $this->transaction_date = $transaction->transaction_date ? $transaction->transaction_date->format('Y-m-d') : Carbon::now()->format('Y-m-d');
             $this->category_id = $transaction->category_id;
             $this->transfer_to_account_id = $transaction->transfer_to_account_id;
-            $this->reconciled = $transaction->reconciled;
+            $this->reconciled = (bool) ($transaction->reconciled ?? false);
         } else {
             // Set default account for new transactions
             $this->account_id = auth()

@@ -124,12 +124,14 @@ final class CategoryManager extends Component
                 }
             }
         } else {
+            $category = new Category($data);
+            $category->user_id = auth()->id();
+
             if ($this->parentCategoryId) {
                 $parent = Category::find($this->parentCategoryId);
-                $category = new Category($data);
                 $category->appendToNode($parent)->save();
             } else {
-                $category = Category::create($data);
+                $category->save();
             }
         }
 
@@ -165,10 +167,10 @@ final class CategoryManager extends Component
         $this->resetRuleForm();
 
         if ($rule) {
-            $this->ruleField = $rule->field;
-            $this->ruleOperator = $rule->operator;
-            $this->ruleValue = $rule->value;
-            $this->rulePriority = $rule->priority;
+            $this->ruleField = $rule->field ?? 'description';
+            $this->ruleOperator = $rule->operator ?? 'contains';
+            $this->ruleValue = $rule->value ?? '';
+            $this->rulePriority = $rule->priority ?? 0;
             $this->ruleCategoryId = $rule->category_id;
         }
 
