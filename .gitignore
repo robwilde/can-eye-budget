@@ -22,3 +22,11 @@ yarn-error.log
 /.vscode
 /.zed
 /.env.testing
+/.claude/coding_standards.md
+/.claude/instructions.md
+/.claude/memory_prompts.md
+/.claude/project_context.md
+/.claude/README.md
+/.claude/shortcuts.sh
+/setup.sh
+/.env.testing
