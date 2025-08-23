@@ -19,6 +19,12 @@ final class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Create default user for testing
+        $this->call([
+            DefaultUserSeeder::class,
+            DefaultAccountCategoriesSeeder::class,
+        ]);
+
         // Create test users
         $testUser = User::factory()->create([
             'name'  => 'Test User',
