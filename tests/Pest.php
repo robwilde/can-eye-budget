@@ -17,6 +17,9 @@ pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
 
+// Configure compact printer for cleaner output
+pest()->printer()->compact();
+
 /*
 |--------------------------------------------------------------------------
 | Expectations
@@ -47,3 +50,50 @@ function something()
 {
     // ..
 }
+
+/*
+|--------------------------------------------------------------------------
+| Project Configuration & Architecture
+|--------------------------------------------------------------------------
+|
+| Configure the project repository for team management features and apply
+| architecture presets for consistent code quality across the application.
+|
+*/
+
+pest()->project()->github('MrWilde/can-eye-budget');
+
+// Apply Laravel architecture preset with security best practices
+arch()->preset()->laravel();
+arch()->preset()->security();
+
+/*
+|--------------------------------------------------------------------------
+| Application Architecture Rules
+|--------------------------------------------------------------------------
+|
+| Custom architectural expectations specific to the budget application,
+| enforcing domain boundaries and coding standards.
+|
+*/
+
+// Ensure all models extend Eloquent Model
+arch('models')
+    ->expect('App\Models')
+    ->toExtend('Illuminate\Database\Eloquent\Model');
+
+// Ensure all Livewire components extend proper base class
+arch('livewire components')
+    ->expect('App\Livewire')
+    ->toExtend('Livewire\Component');
+
+// Ensure all service classes follow naming convention
+arch('services')
+    ->expect('App\Services')
+    ->toHaveSuffix('Service');
+
+// Ensure controllers follow naming convention and extend base controller
+arch('controllers')
+    ->expect('App\Http\Controllers')
+    ->toHaveSuffix('Controller')
+    ->toExtend('App\Http\Controllers\Controller');
