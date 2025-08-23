@@ -44,14 +44,12 @@ scenarios.
 
 ### Step-by-Step Setup Guide
 
-Install Playwright MCP for Claude Code```bash
+Install Playwright MCP for Claude Code
 
+```bash
 # Run this command in your Laravel project directory
-
 claude mcp add playwright npx '@playwright/mcp@latest'
-
 ```
-
 
 This command sets up the MCP server locally and persists the configuration in your project directory 0:0. Verify Installation- Run `claude` in your terminal
 - Type `/mcp` followed by `playwright` to view available tools

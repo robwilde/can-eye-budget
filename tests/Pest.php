@@ -17,8 +17,29 @@ pest()->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
 
+// Configure browser tests
+pest()->extend(Tests\TestCase::class)
+    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->in('Browser');
+
 // Configure compact printer for cleaner output
 pest()->printer()->compact();
+
+/*
+|--------------------------------------------------------------------------
+| Browser Testing Configuration
+|--------------------------------------------------------------------------
+|
+| Configure default settings for browser testing with Playwright.
+| These settings control timeouts, browser preferences, and viewport options.
+|
+*/
+
+// Set default browser timeout to 10 seconds (10000ms)
+pest()->browser()->timeout(10000);
+
+// Use Chrome by default (can be overridden with --browser flag)
+// pest()->browser()->inChrome(); // Default, so commenting out
 
 /*
 |--------------------------------------------------------------------------

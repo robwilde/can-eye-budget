@@ -30,3 +30,6 @@ yarn-error.log
 /.claude/shortcuts.sh
 /setup.sh
 /.env.testing
+
+# Browser testing screenshots
+/tests/Browser/Screenshots
