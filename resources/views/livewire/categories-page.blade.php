@@ -26,17 +26,50 @@
         
         <form wire:submit="addCategory" class="space-y-4">
             <div class="flex space-x-4">
-                <div class="flex-1">
+                <div class="flex-1 relative">
                     <flux:field>
                         <flux:input 
                             wire:model.live="newCategoryName" 
-                            placeholder="Enter category name (e.g., Food/Groceries)" 
+                            placeholder="Enter category name (e.g., Food/Groceries)"
+                            x-data="categoryAutocomplete"
+                            x-on:keydown.tab.prevent="$wire.acceptAutocomplete()"
+                            x-on:keydown.arrow-down.prevent="$wire.nextAutocomplete()"
+                            x-on:keydown.arrow-up.prevent="$wire.previousAutocomplete()"
+                            x-on:keydown.enter.prevent="handleEnter"
                         />
                         <flux:description>
-                            Use forward slashes (/) to create subcategories. For example: "Food/Groceries" or "Bills/Utilities/Electricity"
+                            Use forward slashes (/) to create subcategories. Press Tab to autocomplete. Use arrow keys to cycle through options.
                         </flux:description>
                         <flux:error name="newCategoryName" />
                     </flux:field>
+                    
+                    <!-- Autocomplete dropdown -->
+                    @if($this->autocompleteOptions()->isNotEmpty() && $this->currentAutocompleteSuggestion)
+                        <div class="absolute z-10 w-full mt-1 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-md shadow-lg">
+                            <div class="p-2 border-b border-zinc-200 dark:border-zinc-700">
+                                <div class="text-sm text-zinc-600 dark:text-zinc-400">
+                                    Press <kbd class="px-1 py-0.5 text-xs bg-zinc-100 dark:bg-zinc-700 rounded">Tab</kbd> to complete:
+                                </div>
+                                <div class="text-sm font-medium text-zinc-900 dark:text-zinc-100 mt-1">
+                                    {{ $this->currentAutocompleteSuggestion }}
+                                </div>
+                            </div>
+                            @if($this->autocompleteOptions()->count() > 1)
+                                <div class="p-2">
+                                    <div class="text-xs text-zinc-500 dark:text-zinc-400">
+                                        {{ $this->autocompleteIndex + 1 }} of {{ $this->autocompleteOptions()->count() }} options (use ↑↓ to cycle)
+                                    </div>
+                                    <div class="mt-1 space-y-1">
+                                        @foreach($this->autocompleteOptions() as $index => $option)
+                                            <div class="text-xs px-2 py-1 rounded {{ $index === $this->autocompleteIndex ? 'bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200' : 'text-zinc-600 dark:text-zinc-400' }}">
+                                                {{ $option->name }}
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
                 </div>
                 <flux:button type="submit" variant="primary">
                     Add Category
@@ -95,3 +128,20 @@
         </div>
     </div>
 </div>
+
+@script
+<script>
+    Alpine.data('categoryAutocomplete', () => ({
+        handleEnter(event) {
+            // If there's an autocomplete suggestion, accept it instead of submitting the form
+            if (this.$wire.get('currentAutocompleteSuggestion')) {
+                event.preventDefault();
+                this.$wire.acceptAutocomplete();
+            } else {
+                // Let the form submit normally
+                this.$wire.call('addCategory');
+            }
+        }
+    }));
+</script>
+@endscript

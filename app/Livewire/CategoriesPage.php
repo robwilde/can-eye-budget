@@ -16,15 +16,29 @@ final class CategoriesPage extends Component
 
     public string $searchTerm = '';
 
+    public string $currentAutocomplete = '';
+    public int $autocompleteIndex = 0;
+
     public function addCategory(): void
     {
         $this->validate();
 
-        $this->createCategoryFromPath($this->newCategoryName);
-
-        session()->flash('message', 'Category created successfully.');
+        try {
+            $category = $this->createCategoryFromPath($this->newCategoryName);
+            
+            session()->flash('message', "Category '{$category->getFullNameAttribute()}' created successfully.");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Error creating category: ' . $e->getMessage());
+        }
 
         $this->newCategoryName = '';
+        $this->autocompleteIndex = 0;
+    }
+
+    public function updatedNewCategoryName()
+    {
+        // Reset autocomplete index when the input changes
+        $this->autocompleteIndex = 0;
     }
 
     public function deleteCategory(Category $category): void
@@ -75,11 +89,106 @@ final class CategoriesPage extends Component
         $searchTerm = mb_strtolower($this->newCategoryName);
 
         return Category::forUser(auth()->id())
+            ->withCount('transactions')
             ->get()
             ->filter(function ($category) use ($searchTerm) {
                 return str_contains(mb_strtolower($category->getFullNameAttribute()), $searchTerm);
             })
             ->take(5);
+    }
+
+    #[Computed]
+    public function autocompleteOptions()
+    {
+        if (empty($this->newCategoryName)) {
+            return collect();
+        }
+
+        // Split the current input by '/' to understand the hierarchy level
+        $parts = explode('/', $this->newCategoryName);
+        $currentPart = array_pop($parts); // The part we're currently typing
+        $parentPath = implode('/', $parts); // The parent path
+
+        // Get all categories for this user
+        $allCategories = Category::forUser(auth()->id())->get();
+
+        if (empty($parentPath)) {
+            // We're at the root level, show top-level categories
+            $candidates = $allCategories->filter(function ($category) {
+                return is_null($category->parent_id);
+            });
+        } else {
+            // We're in a subcategory, find the parent and show its children
+            $parentCategory = $allCategories->first(function ($category) use ($parentPath) {
+                return mb_strtolower($category->getFullNameAttribute()) === mb_strtolower($parentPath);
+            });
+
+            if (!$parentCategory) {
+                return collect();
+            }
+
+            $candidates = $allCategories->filter(function ($category) use ($parentCategory) {
+                return $category->parent_id === $parentCategory->id;
+            });
+        }
+
+        // Filter candidates by the current part being typed
+        if (!empty($currentPart)) {
+            $candidates = $candidates->filter(function ($category) use ($currentPart) {
+                return str_starts_with(mb_strtolower($category->name), mb_strtolower($currentPart));
+            });
+        }
+
+        return $candidates->sortBy('name')->values();
+    }
+
+    #[Computed]
+    public function currentAutocompleteSuggestion()
+    {
+        $options = $this->autocompleteOptions();
+        
+        if ($options->isEmpty()) {
+            return null;
+        }
+
+        $index = $this->autocompleteIndex % $options->count();
+        $selectedCategory = $options->get($index);
+
+        if (!$selectedCategory) {
+            return null;
+        }
+
+        // Build the full path for the suggestion
+        $parts = explode('/', $this->newCategoryName);
+        array_pop($parts); // Remove the current partial part
+        $parts[] = $selectedCategory->name;
+
+        return implode('/', $parts);
+    }
+
+    public function acceptAutocomplete()
+    {
+        $suggestion = $this->currentAutocompleteSuggestion;
+        
+        if ($suggestion) {
+            $this->newCategoryName = $suggestion;
+            $this->autocompleteIndex = 0;
+        }
+    }
+
+    public function nextAutocomplete()
+    {
+        if ($this->autocompleteOptions()->isNotEmpty()) {
+            $this->autocompleteIndex = ($this->autocompleteIndex + 1) % $this->autocompleteOptions()->count();
+        }
+    }
+
+    public function previousAutocomplete()
+    {
+        $count = $this->autocompleteOptions()->count();
+        if ($count > 0) {
+            $this->autocompleteIndex = ($this->autocompleteIndex - 1 + $count) % $count;
+        }
     }
 
     public function render()
@@ -98,11 +207,21 @@ final class CategoriesPage extends Component
                 continue;
             }
 
+            // First try exact match (case-sensitive)
             $category = Category::forUser(auth()->id())
                 ->where('name', $part)
                 ->where('parent_id', $parent?->id)
                 ->first();
 
+            // If not found, try case-insensitive match
+            if (! $category) {
+                $category = Category::forUser(auth()->id())
+                    ->whereRaw('LOWER(name) = ?', [mb_strtolower($part)])
+                    ->where('parent_id', $parent?->id)
+                    ->first();
+            }
+
+            // If still not found, create new category
             if (! $category) {
                 $category = Category::create([
                     'user_id'   => auth()->id(),
