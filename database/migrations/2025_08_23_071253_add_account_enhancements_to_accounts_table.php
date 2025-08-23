@@ -17,7 +17,7 @@ return new class extends Migration
             $table->decimal('credit_limit', 15, 2)->nullable()->after('initial_balance');
             $table->text('description')->nullable()->after('currency');
             $table->boolean('is_visible_in_totals')->default(true)->after('description');
-            $table->foreignId('account_category_id')->nullable()->constrained()->nullOnDelete()->after('user_id');
+            $table->unsignedBigInteger('account_category_id')->nullable()->after('user_id');
         });
     }
 
@@ -27,9 +27,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('accounts', function (Blueprint $table) {
-            $table->dropColumn(['credit_limit', 'description', 'is_visible_in_totals']);
-            $table->dropForeign(['account_category_id']);
-            $table->dropColumn('account_category_id');
+            $table->dropColumn(['credit_limit', 'description', 'is_visible_in_totals', 'account_category_id']);
         });
     }
 };

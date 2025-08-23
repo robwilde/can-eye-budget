@@ -390,3 +390,5 @@ test('user model test', function () {
 - Feature tests for complete user workflows
 - Performance testing for calendar rendering
 - Security testing for file uploads and user inputs
+
+- please confirm the application is working as expected before attempting to commit changes

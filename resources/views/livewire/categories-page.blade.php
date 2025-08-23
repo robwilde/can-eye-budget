@@ -9,15 +9,15 @@
 
     <!-- Flash Messages -->
     @if (session()->has('message'))
-        <flux:alert variant="success">
+        <div class="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-600 dark:text-green-300 px-4 py-3 rounded">
             {{ session('message') }}
-        </flux:alert>
+        </div>
     @endif
 
     @if (session()->has('error'))
-        <flux:alert variant="danger">
+        <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 px-4 py-3 rounded">
             {{ session('error') }}
-        </flux:alert>
+        </div>
     @endif
 
     <!-- Add Category Form -->

@@ -24,6 +24,11 @@ return new class extends Migration
             $table->unique(['user_id', 'name']);
             $table->index(['user_id', 'sort_order']);
         });
+
+        // Add foreign key constraint to accounts table after account_categories table is created
+        Schema::table('accounts', function (Blueprint $table) {
+            $table->foreign('account_category_id')->references('id')->on('account_categories')->nullOnDelete();
+        });
     }
 
     /**
@@ -31,6 +36,11 @@ return new class extends Migration
      */
     public function down(): void
     {
+        // Drop foreign key constraint from accounts table first
+        Schema::table('accounts', function (Blueprint $table) {
+            $table->dropForeign(['account_category_id']);
+        });
+
         Schema::dropIfExists('account_categories');
     }
 };

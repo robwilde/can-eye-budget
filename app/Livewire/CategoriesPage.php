@@ -85,7 +85,7 @@ final class CategoriesPage extends Component
     public function render()
     {
         return view('livewire.categories-page')
-            ->layout('components.layouts.app.sidebar');
+            ->layout('components.layouts.app', ['title' => 'Categories']);
     }
 
     private function createCategoryFromPath(string $path): Category

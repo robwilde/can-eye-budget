@@ -7,56 +7,93 @@ namespace App\Livewire;
 use App\Models\Account;
 use App\Models\AccountCategory;
 use Livewire\Attributes\Computed;
+use Livewire\Attributes\Validate;
 use Livewire\Component;
 
 final class AccountsPage extends Component
 {
-    public bool $showAccountForm = false;
+    // Account form properties
+    #[Validate('required|min:1|max:255')]
+    public string $accountName = '';
 
-    public bool $showCategoryForm = false;
+    #[Validate('required|numeric')]
+    public float $initialBalance = 0;
 
-    public ?Account $editingAccount = null;
+    public bool $hasCreditLimit = false;
 
-    public ?AccountCategory $editingCategory = null;
+    #[Validate('nullable|numeric|min:0')]
+    public ?float $creditLimit = null;
 
-    public function showAddAccount(): void
+    #[Validate('nullable|exists:account_categories,id')]
+    public ?int $accountCategoryId = null;
+
+    // Account category form properties
+    #[Validate('required|min:1|max:255')]
+    public string $categoryName = '';
+
+    public bool $displayInList = true;
+
+    public int $sortOrder = 0;
+
+    public function addAccount(): void
     {
-        $this->editingAccount = null;
-        $this->showAccountForm = true;
-        $this->dispatch('show-account-form');
+        // Custom validation for credit limit accounts
+        if ($this->hasCreditLimit && $this->initialBalance >= 0) {
+            $this->addError('initialBalance', 'Balance should be negative for Credit Cards');
+            return;
+        }
+
+        $this->validate([
+            'accountName' => 'required|min:1|max:255',
+            'initialBalance' => 'required|numeric',
+            'creditLimit' => $this->hasCreditLimit ? 'required|numeric|min:0' : 'nullable',
+            'accountCategoryId' => 'nullable|exists:account_categories,id',
+        ]);
+
+        Account::create([
+            'user_id' => auth()->id(),
+            'name' => $this->accountName,
+            'type' => $this->hasCreditLimit ? 'credit' : 'checking',
+            'initial_balance' => $this->initialBalance,
+            'credit_limit' => $this->hasCreditLimit ? $this->creditLimit : null,
+            'account_category_id' => $this->accountCategoryId,
+        ]);
+
+        $this->resetAccountForm();
+        session()->flash('message', 'Account created successfully!');
     }
 
-    public function editAccount(Account $account): void
+    public function addCategory(): void
     {
-        $this->editingAccount = $account;
-        $this->showAccountForm = true;
-        $this->dispatch('show-account-form');
+        $this->validate([
+            'categoryName' => 'required|min:1|max:255',
+        ]);
+
+        AccountCategory::create([
+            'user_id' => auth()->id(),
+            'name' => $this->categoryName,
+            'display_in_list' => $this->displayInList,
+            'sort_order' => $this->sortOrder,
+        ]);
+
+        $this->resetCategoryForm();
+        session()->flash('message', 'Account category created successfully!');
     }
 
-    public function showAddCategory(): void
+    protected function resetAccountForm(): void
     {
-        $this->editingCategory = null;
-        $this->showCategoryForm = true;
-        $this->dispatch('show-category-form');
+        $this->accountName = '';
+        $this->initialBalance = 0;
+        $this->hasCreditLimit = false;
+        $this->creditLimit = null;
+        $this->accountCategoryId = null;
     }
 
-    public function editCategory(AccountCategory $category): void
+    protected function resetCategoryForm(): void
     {
-        $this->editingCategory = $category;
-        $this->showCategoryForm = true;
-        $this->dispatch('show-category-form');
-    }
-
-    public function closeAccountForm(): void
-    {
-        $this->showAccountForm = false;
-        $this->editingAccount = null;
-    }
-
-    public function closeCategoryForm(): void
-    {
-        $this->showCategoryForm = false;
-        $this->editingCategory = null;
+        $this->categoryName = '';
+        $this->displayInList = true;
+        $this->sortOrder = 0;
     }
 
     #[Computed]
@@ -89,9 +126,17 @@ final class AccountsPage extends Component
             ->sum(fn (Account $account) => $account->getCurrentBalance());
     }
 
+    #[Computed]
+    public function availableCategories()
+    {
+        return AccountCategory::forUser(auth()->id())
+            ->ordered()
+            ->get();
+    }
+
     public function render()
     {
         return view('livewire.accounts-page')
-            ->layout('components.layouts.app.sidebar');
+            ->layout('components.layouts.app', ['title' => 'Accounts']);
     }
 }

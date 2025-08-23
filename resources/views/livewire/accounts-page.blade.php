@@ -5,28 +5,130 @@
             <h1 class="text-3xl font-bold text-zinc-900 dark:text-zinc-100">Accounts</h1>
             <p class="mt-2 text-sm text-zinc-600 dark:text-zinc-400">Manage your financial accounts and categories</p>
         </div>
-        <div class="flex space-x-3">
-            <flux:button variant="outline" wire:click="showAddCategory" icon="folder-plus">
-                Add Category
-            </flux:button>
-            <flux:button wire:click="showAddAccount" icon="plus">
-                Add Account
-            </flux:button>
-        </div>
     </div>
 
     <!-- Flash Messages -->
     @if (session()->has('message'))
-        <flux:alert variant="success">
+        <div class="bg-green-50 dark:bg-green-900 border border-green-200 dark:border-green-700 text-green-600 dark:text-green-300 px-4 py-3 rounded">
             {{ session('message') }}
-        </flux:alert>
+        </div>
     @endif
 
     @if (session()->has('error'))
-        <flux:alert variant="danger">
+        <div class="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 text-red-600 dark:text-red-300 px-4 py-3 rounded">
             {{ session('error') }}
-        </flux:alert>
+        </div>
     @endif
+
+    <!-- Forms Row: Account Form (left) and Category Form (right) -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Add Account Form -->
+        <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 p-6">
+            <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Add New Account</h2>
+            
+            <form wire:submit="addAccount" class="space-y-4">
+                <flux:field>
+                    <flux:label>Account Name</flux:label>
+                    <flux:input 
+                        wire:model="accountName" 
+                        placeholder="Enter account name"
+                        required
+                    />
+                    <flux:error name="accountName" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>Initial Balance</flux:label>
+                    <flux:input 
+                        type="number" 
+                        step="0.01"
+                        wire:model="initialBalance" 
+                        placeholder="0.00"
+                        required
+                    />
+                    @if($hasCreditLimit)
+                        <flux:description class="text-amber-600 dark:text-amber-400">
+                            Balance should be negative for Credit Cards
+                        </flux:description>
+                    @endif
+                    <flux:error name="initialBalance" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:checkbox wire:model.live="hasCreditLimit" label="Credit Limit" />
+                    <flux:description>Check if this is a credit card account</flux:description>
+                </flux:field>
+
+                @if($hasCreditLimit)
+                    <flux:field>
+                        <flux:label>Credit Limit Amount</flux:label>
+                        <flux:input 
+                            type="number" 
+                            step="0.01"
+                            wire:model="creditLimit" 
+                            placeholder="0.00"
+                            required
+                        />
+                        <flux:description>Maximum credit limit for this card</flux:description>
+                        <flux:error name="creditLimit" />
+                    </flux:field>
+                @endif
+
+                <flux:field>
+                    <flux:label>Category</flux:label>
+                    <flux:select wire:model="accountCategoryId">
+                        <option value="">No Category</option>
+                        @foreach($this->availableCategories as $category)
+                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                        @endforeach
+                    </flux:select>
+                    <flux:description>Choose a category to group this account</flux:description>
+                    <flux:error name="accountCategoryId" />
+                </flux:field>
+
+                <flux:button type="submit" variant="primary" class="w-full">
+                    Add Account
+                </flux:button>
+            </form>
+        </div>
+
+        <!-- Add Account Category Form -->
+        <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 p-6">
+            <h2 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100 mb-4">Add Account Category</h2>
+            
+            <form wire:submit="addCategory" class="space-y-4">
+                <flux:field>
+                    <flux:label>Category Name</flux:label>
+                    <flux:input 
+                        wire:model="categoryName" 
+                        placeholder="Enter category name (e.g., Bank Accounts, Credit Cards)"
+                        required
+                    />
+                    <flux:error name="categoryName" />
+                </flux:field>
+
+                <flux:field>
+                    <flux:checkbox wire:model="displayInList" label="Display Category in Accounts List" />
+                    <flux:description>When enabled, accounts in this category will be grouped together on this page</flux:description>
+                </flux:field>
+
+                <flux:field>
+                    <flux:label>Sort Order</flux:label>
+                    <flux:input 
+                        type="number"
+                        wire:model="sortOrder" 
+                        placeholder="0"
+                        min="0"
+                    />
+                    <flux:description>Lower numbers appear first (0 = highest priority)</flux:description>
+                </flux:field>
+
+                <flux:button type="submit" variant="primary" class="w-full">
+                    Add Category
+                </flux:button>
+            </form>
+        </div>
+    </div>
 
     <!-- Total Balance -->
     <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700 p-6">
@@ -41,20 +143,15 @@
         </div>
     </div>
 
-    <!-- Account Categories -->
+    <!-- Accounts by Category -->
     @foreach($this->accountCategories as $category)
         <div class="bg-white dark:bg-zinc-800 rounded-lg shadow-sm border border-zinc-200 dark:border-zinc-700">
             <!-- Category Header -->
             <div class="p-6 border-b border-zinc-200 dark:border-zinc-700">
                 <div class="flex items-center justify-between">
                     <h3 class="text-lg font-semibold text-zinc-900 dark:text-zinc-100">{{ $category->name }}</h3>
-                    <div class="flex items-center space-x-4">
-                        <div class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-                            Total: ${{ number_format($category->accounts->sum(fn($account) => $account->getCurrentBalance()), 2) }}
-                        </div>
-                        <flux:button variant="ghost" size="sm" wire:click="editCategory({{ $category->id }})" icon="pencil">
-                            Edit
-                        </flux:button>
+                    <div class="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                        Total: ${{ number_format($category->accounts->sum(fn($account) => $account->getCurrentBalance()), 2) }}
                     </div>
                 </div>
             </div>
@@ -65,12 +162,6 @@
                     <div class="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
                         <div class="flex items-center justify-between mb-2">
                             <h4 class="font-semibold text-zinc-900 dark:text-zinc-100">{{ $account->name }}</h4>
-                            <flux:dropdown>
-                                <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
-                                <flux:menu>
-                                    <flux:menu.item wire:click="editAccount({{ $account->id }})" icon="pencil">Edit</flux:menu.item>
-                                </flux:menu>
-                            </flux:dropdown>
                         </div>
                         
                         <div class="flex items-center justify-between mb-1">
@@ -113,12 +204,6 @@
                     <div class="bg-zinc-50 dark:bg-zinc-900 rounded-lg p-4 border border-zinc-200 dark:border-zinc-700">
                         <div class="flex items-center justify-between mb-2">
                             <h4 class="font-semibold text-zinc-900 dark:text-zinc-100">{{ $account->name }}</h4>
-                            <flux:dropdown>
-                                <flux:button variant="ghost" size="sm" icon="ellipsis-horizontal" />
-                                <flux:menu>
-                                    <flux:menu.item wire:click="editAccount({{ $account->id }})" icon="pencil">Edit</flux:menu.item>
-                                </flux:menu>
-                            </flux:dropdown>
                         </div>
                         
                         <div class="flex items-center justify-between mb-1">
@@ -144,33 +229,4 @@
             </div>
         </div>
     @endif
-
-    <!-- Modals -->
-    @if($showAccountForm)
-        <flux:modal name="account-form" wire:model.live="showAccountForm" class="min-w-lg">
-            <div class="p-6">
-                @livewire('account-form', ['account' => $editingAccount], key('account-form-' . optional($editingAccount)->id))
-            </div>
-        </flux:modal>
-    @endif
-
-    @if($showCategoryForm)
-        <flux:modal name="category-form" wire:model.live="showCategoryForm" class="min-w-lg">
-            <div class="p-6">
-                @livewire('account-category-form', ['category' => $editingCategory], key('category-form-' . optional($editingCategory)->id))
-            </div>
-        </flux:modal>
-    @endif
 </div>
-
-@script
-<script>
-    $wire.on('account-saved', () => {
-        $wire.$refresh();
-    });
-
-    $wire.on('category-saved', () => {
-        $wire.$refresh();
-    });
-</script>
-@endscript
