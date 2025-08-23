@@ -17,9 +17,6 @@ class Calculator {
     }
 }
 
-// Test with covers declaration for mutation testing
-covers(Calculator::class);
-
 test('calculator can add numbers', function () {
     expect(Calculator::add(2, 3))->toBe(5);
     expect(Calculator::add(0, 5))->toBe(5);
