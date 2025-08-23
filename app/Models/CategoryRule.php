@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -27,6 +28,14 @@ final class CategoryRule extends Model
     public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    /**
+     * Scope to order by priority (highest first)
+     */
+    public function scopeByPriority(Builder $query): Builder
+    {
+        return $query->orderBy('priority', 'desc');
     }
 
     public function matches(string $description, float $amount): bool

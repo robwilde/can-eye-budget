@@ -47,6 +47,12 @@ composer test                 # Run full test suite (clears config + runs tests)
 php artisan test             # Run tests directly
 ./vendor/bin/pest            # Run PEST tests specifically
 ./vendor/bin/pest --filter=ExampleTest  # Run specific test
+
+# PEST 4 Features
+./vendor/bin/pest --coverage # Generate code coverage report
+./vendor/bin/pest --mutate   # Run mutation testing (requires XDEBUG_MODE=coverage)
+./vendor/bin/pest --mutate --covered-only --min=60  # Mutation testing with 60% minimum score
+./vendor/bin/pest --parallel # Run tests in parallel
 ```
 
 ### Code Quality
@@ -131,10 +137,13 @@ The application follows a multi-entity budget model:
 - Import tracking for CSV reconciliation
 
 ### Testing Strategy
-- PEST PHP with Laravel integration
+- PEST PHP 4 with Laravel integration
 - RefreshDatabase for Feature tests
 - SQLite in-memory database for testing
 - Factory pattern for test data generation
+- Mutation testing for test quality assurance
+- Architecture testing for code structure enforcement
+- Compact output format for cleaner test results
 
 ### Code Style
 - Laravel Pint for PHP code formatting
@@ -150,9 +159,42 @@ The application follows a multi-entity budget model:
 
 ### Dependencies
 - Core: Laravel 12, Livewire, Volt, Flux UI
-- Testing: PEST PHP with Laravel plugin
+- Testing: PEST PHP 4 with Laravel plugin, mutation testing, architecture testing
 - Build: Vite, TailwindCSS 4, Laravel Vite plugin
 - Quality: Laravel Pint, security advisories
+
+## PEST 4 Features
+
+### Mutation Testing
+Mutation testing is available to assess test quality by introducing small changes to code and verifying tests catch them:
+
+```bash
+# Run mutation testing with coverage
+XDEBUG_MODE=coverage ./vendor/bin/pest --mutate
+
+# Run mutation testing only on covered code with minimum score requirement
+XDEBUG_MODE=coverage ./vendor/bin/pest --mutate --covered-only --min=70
+
+# Run mutation testing on specific classes
+XDEBUG_MODE=coverage ./vendor/bin/pest --mutate --class=App\\Models
+```
+
+### Architecture Testing
+Architecture presets are automatically applied via `tests/Pest.php`:
+- Laravel preset: Enforces Laravel best practices
+- Security preset: Prevents insecure coding patterns
+- Custom rules: Enforces naming conventions and inheritance patterns
+
+### Test Coverage
+Use `covers()` function in tests to specify which classes are being tested for mutation testing:
+
+```php
+covers(App\Models\User::class);
+
+test('user model test', function () {
+    // test implementation
+});
+```
 
 ### Special Features
 - Concurrent development workflow via `composer dev`
