@@ -7,12 +7,15 @@ test('that true is true', function () {
 });
 
 // Simple math function to test mutation testing
-class Calculator {
-    public static function add(int $a, int $b): int {
+final class Calculator
+{
+    public static function add(int $a, int $b): int
+    {
         return $a + $b;
     }
-    
-    public static function multiply(int $a, int $b): int {
+
+    public static function multiply(int $a, int $b): int
+    {
         return $a * $b;
     }
 }
