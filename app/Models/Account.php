@@ -15,19 +15,30 @@ final class Account extends Model
 
     protected $fillable = [
         'user_id',
+        'account_category_id',
         'name',
         'type',
         'initial_balance',
+        'credit_limit',
         'currency',
+        'description',
+        'is_visible_in_totals',
     ];
 
     protected $casts = [
-        'initial_balance' => 'decimal:2',
+        'initial_balance'      => 'decimal:2',
+        'credit_limit'         => 'decimal:2',
+        'is_visible_in_totals' => 'boolean',
     ];
 
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function accountCategory(): BelongsTo
+    {
+        return $this->belongsTo(AccountCategory::class);
     }
 
     public function transactions(): HasMany
@@ -63,5 +74,29 @@ final class Account extends Model
             ->sum('amount') ?? 0;
 
         return (float) ($this->initial_balance + $transactionSum + $transfersInSum);
+    }
+
+    public function scopeVisibleInTotals($query)
+    {
+        return $query->where('is_visible_in_totals', true);
+    }
+
+    public function scopeForUser($query, $userId)
+    {
+        return $query->where('user_id', $userId);
+    }
+
+    public function isCreditAccount(): bool
+    {
+        return $this->type === 'credit';
+    }
+
+    public function getAvailableCredit(): ?float
+    {
+        if (! $this->isCreditAccount() || ! $this->credit_limit) {
+            return null;
+        }
+
+        return (float) ($this->credit_limit + $this->getCurrentBalance());
     }
 }

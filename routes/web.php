@@ -15,6 +15,10 @@ Route::view('dashboard', 'dashboard')
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
 
+    // Budget management routes
+    Route::get('accounts', App\Livewire\AccountsPage::class)->name('accounts');
+    Route::get('categories', App\Livewire\CategoriesPage::class)->name('categories');
+
     // Settings routes - these will need traditional Livewire components
     Route::get('settings/profile', function () {
         return view('settings.profile');
