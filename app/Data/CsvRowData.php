@@ -6,6 +6,7 @@ namespace App\Data;
 
 use App\Models\Category;
 use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 use Spatie\LaravelData\Data;
@@ -21,7 +22,7 @@ final class CsvRowData extends Data
         public string $description,
 
         #[WithCast(DateTimeInterfaceCast::class)]
-        public Carbon $date,
+        public CarbonInterface $date,
 
         public Optional|float $debit,
         public Optional|float $credit,
@@ -32,13 +33,22 @@ final class CsvRowData extends Data
 
     public static function fromArray(array $data): self
     {
+        $date = $data['date'] ?? now();
+        
+        // Ensure date is a Carbon instance
+        if (is_string($date)) {
+            $date = Carbon::parse($date);
+        } elseif (!$date instanceof CarbonInterface) {
+            $date = now();
+        }
+        
         return new self(
             raw_data: $data['raw_data'] ?? [],
             csv_row_hash: $data['csv_row_hash'] ?? '',
             type: $data['type'] ?? 'expense',
             amount: (float) ($data['amount'] ?? 0),
             description: $data['description'] ?? '',
-            date: $data['date'] ?? now(),
+            date: $date,
             debit: isset($data['debit']) ? (float) $data['debit'] : Optional::create(),
             credit: isset($data['credit']) ? (float) $data['credit'] : Optional::create(),
             balance: isset($data['balance']) ? (float) $data['balance'] : Optional::create(),

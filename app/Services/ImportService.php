@@ -17,6 +17,7 @@ use Exception;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 final class ImportService
 {
@@ -38,10 +39,11 @@ final class ImportService
         $path = $file->store('imports', 'local');
 
         return Import::create([
-            'user_id'     => $user->id,
-            'filename'    => $filename,
-            'imported_at' => now(),
-            'status'      => 'pending',
+            'user_id'        => $user->id,
+            'filename'       => $filename,
+            'csv_file_path'  => $path,
+            'imported_at'    => now(),
+            'status'         => 'pending',
         ]);
     }
 
@@ -110,22 +112,16 @@ final class ImportService
     public function detectColumns(array $headers): array
     {
         $detectedMapping = [];
+        $originalHeaders = $headers;
         $headers = array_map('strtolower', $headers);
 
-        $columnPatterns = [
-            'date'        => ['date', 'transaction_date', 'posted_date', 'trans_date'],
-            'description' => ['description', 'memo', 'details', 'transaction_description'],
-            'amount'      => ['amount', 'transaction_amount', 'debit', 'credit'],
-            'debit'       => ['debit', 'withdrawal', 'outgoing'],
-            'credit'      => ['credit', 'deposit', 'incoming'],
-            'balance'     => ['balance', 'running_balance', 'account_balance'],
-        ];
+        $columnPatterns = config('import.column_patterns');
 
         foreach ($columnPatterns as $field => $patterns) {
             foreach ($headers as $index => $header) {
                 foreach ($patterns as $pattern) {
                     if (str_contains($header, $pattern)) {
-                        $detectedMapping[$field] = $index;
+                        $detectedMapping[$field] = $originalHeaders[$index];
                         break 2;
                     }
                 }
@@ -157,9 +153,28 @@ final class ImportService
 
     private function readCsvFile(Import $import): Collection
     {
-        $path = storage_path("app/imports/{$import->filename}");
+        $content = Storage::disk('local')->get($import->csv_file_path);
+        
+        $csvData = collect();
+        $lines = explode("\n", $content);
+        
+        if (empty($lines)) {
+            return $csvData;
+        }
+        
+        $headers = str_getcsv(array_shift($lines));
+        
+        foreach ($lines as $line) {
+            $line = trim($line);
+            if (!empty($line)) {
+                $row = str_getcsv($line);
+                if (count($row) === count($headers)) {
+                    $csvData->push(array_combine($headers, $row));
+                }
+            }
+        }
 
-        return $this->readCsvFromPath($path);
+        return $csvData;
     }
 
     private function readCsvFromFile(UploadedFile $file): Collection
@@ -197,6 +212,14 @@ final class ImportService
             foreach ($columnMapping as $field => $csvColumn) {
                 if (isset($row[$csvColumn])) {
                     $processed[$field] = $this->normalizeValue($field, $row[$csvColumn]);
+                }
+            }
+
+            // Handle priority date selection: prefer effective_date over date if both exist
+            if (isset($processed['entered_date'])) {
+                // If effective date is empty/null but entered date exists, use entered date
+                if (empty($processed['date']) && !empty($processed['entered_date'])) {
+                    $processed['date'] = $processed['entered_date'];
                 }
             }
 
@@ -241,24 +264,24 @@ final class ImportService
 
     private function parseDate(string $value): ?Carbon
     {
-        $formats = [
-            'Y-m-d',
-            'm/d/Y',
-            'd/m/Y',
-            'Y-m-d H:i:s',
-            'm/d/Y H:i:s',
-        ];
+        // Handle empty dates
+        if (empty(trim($value))) {
+            return null;
+        }
+
+        $formats = config('import.date_formats');
 
         foreach ($formats as $format) {
             try {
-                return Carbon::createFromFormat($format, $value);
+                return Carbon::createFromFormat($format, trim($value));
             } catch (Exception $e) {
                 continue;
             }
         }
 
+        // Try Carbon's flexible parser as fallback
         try {
-            return Carbon::parse($value);
+            return Carbon::parse(trim($value));
         } catch (Exception $e) {
             return null;
         }
@@ -307,9 +330,10 @@ final class ImportService
 
     private function isLikelyDuplicate(Transaction $transaction, array $csvRow): bool
     {
-        // Check date match (within 1 day tolerance)
+        // Check date match (with configurable tolerance)
         $csvDate = $csvRow['date'];
-        if (! $csvDate || abs($transaction->transaction_date->diffInDays($csvDate)) > 1) {
+        $dateTolerance = config('import.date_tolerance_days', 2);
+        if (! $csvDate || abs($transaction->transaction_date->diffInDays($csvDate)) > $dateTolerance) {
             return false;
         }
 
@@ -324,7 +348,8 @@ final class ImportService
             $csvRow['description'] ?? ''
         );
 
-        return $descriptionSimilarity > 0.7; // 70% similarity threshold
+        $threshold = config('import.duplicate_threshold', 0.7);
+        return $descriptionSimilarity > $threshold;
     }
 
     private function calculateDuplicateConfidence(Transaction $transaction, array $csvRow): float
