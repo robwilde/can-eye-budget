@@ -14,13 +14,20 @@ use Illuminate\Support\Facades\DB;
 
 final class TransactionService
 {
-    public function createTransaction(User $user, TransactionData $transactionData): Transaction
+    public function createTransaction(User $user, TransactionData|array $transactionData): Transaction
     {
         return DB::transaction(function () use ($user, $transactionData) {
-            $account = Account::where('user_id', $user->id)
-                ->findOrFail($transactionData->account_id);
+            if (is_array($transactionData)) {
+                $account = Account::where('user_id', $user->id)
+                    ->findOrFail($transactionData['account_id']);
 
-            $transaction = $account->transactions()->create($transactionData->toCreateArray());
+                $transaction = $account->transactions()->create($transactionData);
+            } else {
+                $account = Account::where('user_id', $user->id)
+                    ->findOrFail($transactionData->account_id);
+
+                $transaction = $account->transactions()->create($transactionData->toCreateArray());
+            }
 
             if ($transaction->isTransfer() && $transaction->transfer_to_account_id) {
                 $this->createTransferTransaction($transaction);
@@ -103,11 +110,13 @@ final class TransactionService
     public function getRunningBalance(Account $account, Carbon $date): float
     {
         $transactions = $account->transactions()
+            ->entered() // Only include entered transactions, not planned
             ->where('transaction_date', '<=', $date)
             ->get();
 
         $transfersIn = Transaction::where('transfer_to_account_id', $account->id)
             ->where('type', 'transfer')
+            ->where('status', 'entered') // Only include entered transfers, not planned
             ->where('transaction_date', '<=', $date)
             ->get();
 
@@ -138,6 +147,35 @@ final class TransactionService
         return $transaction;
     }
 
+    public function getPeriodTotals(User $user, Carbon $startDate, Carbon $endDate): array
+    {
+        $transactions = $this->getTransactionsForPeriod($user, $startDate, $endDate);
+
+        $plannedIncome = $transactions->where('status', 'planned')->where('type', 'income')->sum('amount');
+        $plannedExpenses = $transactions->where('status', 'planned')->where('type', 'expense')->sum('amount');
+        $enteredIncome = $transactions->where('status', 'entered')->where('type', 'income')->sum('amount');
+        $enteredExpenses = $transactions->where('status', 'entered')->where('type', 'expense')->sum('amount');
+
+        $plannedNet = $plannedIncome - $plannedExpenses;
+        $enteredNet = $enteredIncome - $enteredExpenses;
+
+        $percentageSaved = $plannedNet > 0 ? round(($enteredNet / $plannedNet) * 100) : 0;
+
+        return [
+            'planned' => [
+                'income'   => $plannedIncome,
+                'expenses' => $plannedExpenses,
+                'net'      => $plannedNet,
+            ],
+            'entered' => [
+                'income'   => $enteredIncome,
+                'expenses' => $enteredExpenses,
+                'net'      => $enteredNet,
+            ],
+            'percentage_saved' => $percentageSaved,
+        ];
+    }
+
     private function createTransferTransaction(Transaction $sourceTransaction): void
     {
         $targetAccount = Account::find($sourceTransaction->transfer_to_account_id);
@@ -155,6 +193,7 @@ final class TransactionService
             'category_id'          => $sourceTransaction->category_id,
             'recurring_pattern_id' => $sourceTransaction->recurring_pattern_id,
             'import_id'            => $sourceTransaction->import_id,
+            'status'               => $sourceTransaction->status ?? 'entered',
         ]);
     }
 

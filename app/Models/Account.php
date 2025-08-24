@@ -59,6 +59,7 @@ final class Account extends Model
     public function getCurrentBalance(): float
     {
         $transactionSum = $this->transactions()
+            ->entered() // Only include entered transactions, not planned
             ->selectRaw('
                 SUM(CASE 
                     WHEN type = "income" THEN amount 
@@ -71,6 +72,7 @@ final class Account extends Model
 
         $transfersInSum = $this->transfersIn()
             ->where('type', 'transfer')
+            ->where('status', 'entered') // Only include entered transfers, not planned
             ->sum('amount') ?? 0;
 
         return (float) ($this->initial_balance + $transactionSum + $transfersInSum);
