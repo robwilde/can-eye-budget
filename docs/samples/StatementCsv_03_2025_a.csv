@@ -1,0 +1,15 @@
+Effective Date,Entered Date,Transaction Description,Amount,Balance
+,01/03/2025,"POS - #459939 - PAYPAL *PYPL Payin4      Sydney       AU #2892",-22.25,953.72
+01/03/2025,02/03/2025,"Round Up transfer to 03774599: POS - #459939 - PAYPAL *PYPL Payin4      Sydney       AU #2892",-2.75,950.97
+,03/03/2025,"Direct Debit Spaceship - DT.3v53ev Universe",-100.00,850.97
+,05/03/2025,"Osko Payment From Robert E Wilde Ref#869804245",400.00,1250.97
+,05/03/2025,"Transfer Optimus to CC to SAV 03914373 NET#2293426611",-400.00,850.97
+,05/03/2025,"POS - #260758 - PAYPAL *PYPL Payin4      Sydney       AU #2892",-87.13,763.84
+,06/03/2025,"Ext Tfr  - NET#4176870434 to 554078 Real Living WV WBC - 260 Queen Street",-750.00,13.84
+,06/03/2025,"Direct Debit Fair Go Finance - DT.3vgw9s FGF 1944",-250.00,-236.16
+,06/03/2025,"Direct Debit NIB - 64699390",-87.69,-323.85
+,06/03/2025,"Osko Payment From Robert E Wilde Ref#869860529",500.00,176.15
+,06/03/2025,"Direct Credit SDP Solutions Pt - Salary Payment",5580.75,5756.90
+05/03/2025,06/03/2025,"Round Up transfer to 03774599: POS - #260758 - PAYPAL *PYPL Payin4      Sydney       AU #2892",-2.87,5754.03
+,07/03/2025,"Transfer Optimus to CC to SAV 03914373 NET#2294183683",-2000.00,3754.03
+06/03/2025,07/03/2025,"Insufficient funds #51 - DBS*Goodlife We",0.00,3754.03
