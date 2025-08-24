@@ -17,6 +17,11 @@
                     <flux:navlist.item icon="credit-card" :href="route('accounts')" :current="request()->routeIs('accounts')" wire:navigate>{{ __('Accounts') }}</flux:navlist.item>
                     <flux:navlist.item icon="tag" :href="route('categories')" :current="request()->routeIs('categories')" wire:navigate>{{ __('Categories') }}</flux:navlist.item>
                 </flux:navlist.group>
+
+                <flux:navlist.group :heading="__('Import')" class="grid">
+                    <flux:navlist.item icon="arrow-up-tray" :href="route('import.wizard')" :current="request()->routeIs('import.*')" wire:navigate>{{ __('Import CSV') }}</flux:navlist.item>
+                    <flux:navlist.item icon="clock" :href="route('import.history')" :current="request()->routeIs('import.history')" wire:navigate>{{ __('Import History') }}</flux:navlist.item>
+                </flux:navlist.group>
             </flux:navlist>
 
             <flux:spacer />
