@@ -13,7 +13,7 @@ use Livewire\Component;
 
 final class CalendarViewSimple extends Component
 {
-    public string $view = 'month'; // 'day', 'week', 'month', 'year'
+    public string $view = 'week'; // 'day', 'week', 'month', 'year'
 
     public Carbon $currentDate;
 
@@ -92,6 +92,24 @@ final class CalendarViewSimple extends Component
         }
 
         return $balances;
+    }
+
+    #[Computed]
+    public function periodTotals(): array
+    {
+        return [
+            'planned' => [
+                'income' => 0,
+                'expenses' => 0,
+                'net' => 0,
+            ],
+            'entered' => [
+                'income' => 0,
+                'expenses' => 0,
+                'net' => 0,
+            ],
+            'percentage_saved' => 0,
+        ];
     }
 
     public function setView(string $view): void

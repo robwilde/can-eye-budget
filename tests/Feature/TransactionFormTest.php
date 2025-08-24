@@ -123,7 +123,7 @@ test('transaction form can edit existing transaction', function () {
     expect((float) $transaction->amount)->toBe(150.00);
 });
 
-test('transaction form button text changes based on type and status', function () {
+test('transaction form button text changes based on type', function () {
     $user = User::factory()->create();
     $account = Account::factory()->for($user)->create();
 
@@ -132,32 +132,17 @@ test('transaction form button text changes based on type and status', function (
     // Test Enter Expense
     $component = Livewire::test('transaction-form')
         ->call('open') // Open the modal first
-        ->set('type', 'expense')
-        ->set('status', 'entered');
+        ->set('type', 'expense');
 
     $component->assertSee('Enter Expense');
 
-    // Test Plan Expense
-    $component->set('status', 'planned');
-    $component->assertSee('Plan Expense');
-
     // Test Enter Income
-    $component->set('type', 'income')
-        ->set('status', 'entered');
+    $component->set('type', 'income');
     $component->assertSee('Enter Income');
 
-    // Test Plan Income
-    $component->set('status', 'planned');
-    $component->assertSee('Plan Income');
-
     // Test Enter Transfer
-    $component->set('type', 'transfer')
-        ->set('status', 'entered');
+    $component->set('type', 'transfer');
     $component->assertSee('Enter Transfer');
-
-    // Test Plan Transfer
-    $component->set('status', 'planned');
-    $component->assertSee('Plan Transfer');
 });
 
 test('transaction form button text shows Update in edit mode', function () {

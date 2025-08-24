@@ -44,45 +44,10 @@
                         </div>
                     @endif
 
-                    {{-- Enter vs Plan Toggle --}}
-                    <div class="mb-6">
-                        <div class="flex items-center justify-center mb-4">
-                            <span class="text-green-500 text-sm mr-2">Enter vs Plan</span>
-                            <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
-                                <circle cx="10" cy="10" r="3"/>
-                            </svg>
-                        </div>
-                        <div class="flex rounded-lg border-2 border-gray-200">
-                            <button 
-                                type="button"
-                                wire:click="$set('status', 'entered')"
-                                class="flex-1 px-6 py-3 text-center transition-colors @if($status === 'entered') bg-gray-800 text-white border-r @else text-gray-700 hover:bg-gray-50 @endif"
-                            >
-                                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                                </svg>
-                                Enter
-                            </button>
-                            <button 
-                                type="button"
-                                wire:click="$set('status', 'planned')"
-                                class="flex-1 px-6 py-3 text-center transition-colors @if($status === 'planned') bg-gray-800 text-white @else text-gray-700 hover:bg-gray-50 @endif"
-                            >
-                                <svg class="w-4 h-4 inline mr-2" fill="currentColor" viewBox="0 0 20 20">
-                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.379-8.379-2.828-2.828z"/>
-                                </svg>
-                                Plan
-                            </button>
-                        </div>
-                        @error('status') 
-                            <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span> 
-                        @enderror
-                    </div>
-
                     {{-- Amount Description --}}
                     <div class="mb-6">
                         <label class="block text-gray-600 text-sm mb-2">
-                            @if($status === 'planned') Planned @else Actual @endif amount with description:
+                            Amount with description:
                             <svg class="w-4 h-4 text-gray-400 inline ml-1" fill="currentColor" viewBox="0 0 20 20">
                                 <circle cx="10" cy="10" r="3"/>
                             </svg>
@@ -155,35 +120,6 @@
                         @endif
                     </div>
 
-                    {{-- Recurring Options (only for planned transactions) --}}
-                    @if($status === 'planned')
-                        <div class="mb-6">
-                            <select wire:model.live="recurring_frequency" class="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-3">
-                                @foreach($this->availableFrequencies as $key => $label)
-                                    <option value="{{ $key }}">{{ $label }}</option>
-                                @endforeach
-                            </select>
-                            
-                            @if($this->showRecurringOptions)
-                                <div class="grid grid-cols-2 gap-3">
-                                    <select wire:model.live="recurring_duration" class="border border-gray-300 rounded px-3 py-2 text-sm">
-                                        @foreach($this->frequencyDurationOptions as $key => $label)
-                                            <option value="{{ $key }}">{{ $label }}</option>
-                                        @endforeach
-                                    </select>
-                                    
-                                    @if($recurring_duration === 'until-date')
-                                        <input 
-                                            type="date" 
-                                            wire:model="recurring_end_date"
-                                            class="border border-gray-300 rounded px-3 py-2 text-sm"
-                                            placeholder="2025-09-24"
-                                        >
-                                    @endif
-                                </div>
-                            @endif
-                        </div>
-                    @endif
 
                     {{-- Category Selection --}}
                     <div class="mb-6">
@@ -258,16 +194,12 @@
                     <div class="flex justify-center">
                         <button 
                             wire:click="save"
-                            class="w-full bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors @if($type === 'income') bg-green-600 hover:bg-green-700 @elseif($status === 'planned') bg-red-600 hover:bg-red-700 @endif"
+                            class="w-full bg-red-600 text-white px-8 py-3 rounded-lg font-medium hover:bg-red-700 transition-colors @if($type === 'income') bg-green-600 hover:bg-green-700 @endif"
                         >
                             @if($mode === 'edit')
                                 Update {{ ucfirst($type) }}
                             @else
-                                @if($status === 'planned')
-                                    Plan {{ ucfirst($type) }}
-                                @else
-                                    Enter {{ ucfirst($type) }}
-                                @endif
+                                Enter {{ ucfirst($type) }}
                             @endif
                         </button>
                     </div>
