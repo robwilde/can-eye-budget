@@ -14,22 +14,22 @@
             <flux:field>
                 <flux:label for="account">Select Account *</flux:label>
                 <flux:select wire:model.live="selectedAccountId" placeholder="Choose an account...">
-                    @foreach($this->getUserAccountsProperty as $account)
-                        <flux:option value="{{ $account->id }}">
+                    @foreach($this->user_accounts as $account)
+                        <option value="{{ $account->id }}">
                             {{ $account->name }} ({{ $account->type }})
-                        </flux:option>
+                        </option>
                     @endforeach
                 </flux:select>
                 <flux:error name="selectedAccountId" />
             </flux:field>
             
-            @if($this->getSelectedAccountProperty)
+            @if($this->selected_account)
                 <div class="mt-2 p-3 bg-blue-50 dark:bg-blue-900 rounded text-sm">
                     <div class="font-medium text-blue-900 dark:text-blue-100">
-                        {{ $this->getSelectedAccountProperty->name }}
+                        {{ $this->selected_account->name }}
                     </div>
                     <div class="text-blue-700 dark:text-blue-200">
-                        Current Balance: ${{ number_format($this->getSelectedAccountProperty->getCurrentBalance(), 2) }}
+                        Current Balance: ${{ number_format($this->selected_account->getCurrentBalance(), 2) }}
                     </div>
                 </div>
             @endif

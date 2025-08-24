@@ -125,6 +125,6 @@ final class ImportHistory extends Component
         return view('livewire.import-history', [
             'imports' => $this->getImportsProperty(),
             'statusCounts' => $this->getStatusCounts(),
-        ])->layout('layouts.app');
+        ])->layout('components.layouts.app', ['title' => 'Import History']);
     }
 }

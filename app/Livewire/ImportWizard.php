@@ -237,6 +237,6 @@ final class ImportWizard extends Component
 
     public function render()
     {
-        return view('livewire.import-wizard')->layout('layouts.app');
+        return view('livewire.import-wizard')->layout('components.layouts.app', ['title' => 'Import Wizard']);
     }
 }

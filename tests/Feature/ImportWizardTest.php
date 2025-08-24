@@ -209,15 +209,15 @@ test('import wizard shows progress percentage correctly', function () {
     $component = Livewire::actingAs($this->user)->test(ImportWizard::class);
 
     // Upload step (0% progress)
-    expect($component->get('getProgressPercentageProperty'))->toBe(0.0);
+    expect($component->get('progress_percentage'))->toBe(0.0);
 
     // Mapping step (25% progress)
     $component->set('currentStep', 'mapping');
-    expect($component->get('getProgressPercentageProperty'))->toBe(25.0);
+    expect($component->get('progress_percentage'))->toBe(25.0);
 
     // Results step (100% progress)
     $component->set('currentStep', 'results');
-    expect($component->get('getProgressPercentageProperty'))->toBe(100.0);
+    expect($component->get('progress_percentage'))->toBe(100.0);
 });
 
 test('import wizard loads user accounts correctly', function () {
@@ -226,7 +226,7 @@ test('import wizard loads user accounts correctly', function () {
     $component = Livewire::actingAs($this->user)
         ->test(ImportWizard::class);
 
-    $userAccounts = $component->get('getUserAccountsProperty');
+    $userAccounts = $component->get('user_accounts');
     
     expect($userAccounts)->toHaveCount(2);
     expect($userAccounts->pluck('name'))->toContain('Second Account');

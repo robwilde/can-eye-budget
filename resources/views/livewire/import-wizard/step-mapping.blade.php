@@ -19,7 +19,7 @@
                 <flux:label for="date">Transaction Date *</flux:label>
                 <flux:select wire:model.live="columnMapping.date" placeholder="Select date column...">
                     @foreach($csvHeaders as $index => $header)
-                        <flux:option value="{{ $header }}">{{ $header }}</flux:option>
+                        <option value="{{ $header }}">{{ $header }}</option>
                     @endforeach
                 </flux:select>
                 <flux:error name="columnMapping.date" />
@@ -30,7 +30,7 @@
                 <flux:label for="description">Description *</flux:label>
                 <flux:select wire:model.live="columnMapping.description" placeholder="Select description column...">
                     @foreach($csvHeaders as $index => $header)
-                        <flux:option value="{{ $header }}">{{ $header }}</flux:option>
+                        <option value="{{ $header }}">{{ $header }}</option>
                     @endforeach
                 </flux:select>
                 <flux:error name="columnMapping.description" />
@@ -40,9 +40,9 @@
             <flux:field>
                 <flux:label for="amount">Single Amount Column</flux:label>
                 <flux:select wire:model.live="columnMapping.amount" placeholder="Select amount column (if single)...">
-                    <flux:option value="">None - Using separate Debit/Credit columns</flux:option>
+                    <option value="">None - Using separate Debit/Credit columns</option>
                     @foreach($csvHeaders as $index => $header)
-                        <flux:option value="{{ $header }}">{{ $header }}</flux:option>
+                        <option value="{{ $header }}">{{ $header }}</option>
                     @endforeach
                 </flux:select>
                 <flux:error name="columnMapping.amount" />
@@ -57,9 +57,9 @@
             <flux:field>
                 <flux:label for="debit">Debit/Withdrawal Column</flux:label>
                 <flux:select wire:model.live="columnMapping.debit" placeholder="Select debit column...">
-                    <flux:option value="">None</flux:option>
+                    <option value="">None</option>
                     @foreach($csvHeaders as $index => $header)
-                        <flux:option value="{{ $header }}">{{ $header }}</flux:option>
+                        <option value="{{ $header }}">{{ $header }}</option>
                     @endforeach
                 </flux:select>
             </flux:field>
@@ -68,9 +68,9 @@
             <flux:field>
                 <flux:label for="credit">Credit/Deposit Column</flux:label>
                 <flux:select wire:model.live="columnMapping.credit" placeholder="Select credit column...">
-                    <flux:option value="">None</flux:option>
+                    <option value="">None</option>
                     @foreach($csvHeaders as $index => $header)
-                        <flux:option value="{{ $header }}">{{ $header }}</flux:option>
+                        <option value="{{ $header }}">{{ $header }}</option>
                     @endforeach
                 </flux:select>
             </flux:field>
@@ -79,9 +79,9 @@
             <flux:field>
                 <flux:label for="balance">Balance Column</flux:label>
                 <flux:select wire:model.live="columnMapping.balance" placeholder="Select balance column...">
-                    <flux:option value="">None</flux:option>
+                    <option value="">None</option>
                     @foreach($csvHeaders as $index => $header)
-                        <flux:option value="{{ $header }}">{{ $header }}</flux:option>
+                        <option value="{{ $header }}">{{ $header }}</option>
                     @endforeach
                 </flux:select>
             </flux:field>
@@ -90,9 +90,9 @@
             <flux:field>
                 <flux:label for="entered_date">Entered/Processed Date</flux:label>
                 <flux:select wire:model.live="columnMapping.entered_date" placeholder="Select entered date column...">
-                    <flux:option value="">None</flux:option>
+                    <option value="">None</option>
                     @foreach($csvHeaders as $index => $header)
-                        <flux:option value="{{ $header }}">{{ $header }}</flux:option>
+                        <option value="{{ $header }}">{{ $header }}</option>
                     @endforeach
                 </flux:select>
             </flux:field>

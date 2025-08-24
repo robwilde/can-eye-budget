@@ -19,13 +19,13 @@
                         <div class="flex items-center">
                             <div class="flex items-center">
                                 <div class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium
-                                    {{ $this->getCurrentStepIndexProperty >= $index 
+                                    {{ $this->current_step_index >= $index 
                                         ? 'bg-blue-600 text-white' 
                                         : 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300' }}">
                                     {{ $index + 1 }}
                                 </div>
                                 <span class="ml-2 text-sm font-medium capitalize
-                                    {{ $this->getCurrentStepIndexProperty >= $index 
+                                    {{ $this->current_step_index >= $index 
                                         ? 'text-blue-600 dark:text-blue-400' 
                                         : 'text-gray-500 dark:text-gray-400' }}">
                                     {{ ucfirst($step) }}
@@ -33,7 +33,7 @@
                             </div>
                             @if($index < count($steps) - 1)
                                 <div class="w-12 h-px mx-4
-                                    {{ $this->getCurrentStepIndexProperty > $index 
+                                    {{ $this->current_step_index > $index 
                                         ? 'bg-blue-600' 
                                         : 'bg-gray-200 dark:bg-gray-700' }}">
                                 </div>
@@ -42,12 +42,12 @@
                     @endforeach
                 </div>
                 <div class="text-sm text-gray-500 dark:text-gray-400">
-                    {{ round($this->getProgressPercentageProperty()) }}% Complete
+                    {{ round($this->progress_percentage) }}% Complete
                 </div>
             </div>
             <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
                 <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                     style="width: {{ $this->getProgressPercentageProperty() }}%">
+                     style="width: {{ $this->progress_percentage }}%">
                 </div>
             </div>
         </div>
