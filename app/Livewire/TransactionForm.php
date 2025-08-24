@@ -47,6 +47,7 @@ final class TransactionForm extends Component
 
     public bool $reconciled = false;
 
+
     public bool $showCategoryForm = false;
 
     public string $newCategoryName = '';

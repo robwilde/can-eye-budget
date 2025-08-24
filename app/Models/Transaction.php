@@ -25,6 +25,7 @@ final class Transaction extends Model
         'recurring_pattern_id',
         'import_id',
         'reconciled',
+        'status',
     ];
 
     protected $casts = [
@@ -83,6 +84,16 @@ final class Transaction extends Model
         return $query->where('reconciled', false);
     }
 
+    public function scopePlanned($query)
+    {
+        return $query->where('status', 'planned');
+    }
+
+    public function scopeEntered($query)
+    {
+        return $query->where('status', 'entered');
+    }
+
     public function scopeForDateRange($query, $startDate, $endDate)
     {
         return $query->whereBetween('transaction_date', [$startDate, $endDate]);
@@ -114,5 +125,15 @@ final class Transaction extends Model
     public function isRecurring(): bool
     {
         return ! is_null($this->recurring_pattern_id);
+    }
+
+    public function isPlanned(): bool
+    {
+        return $this->status === 'planned';
+    }
+
+    public function isEntered(): bool
+    {
+        return $this->status === 'entered';
     }
 }
