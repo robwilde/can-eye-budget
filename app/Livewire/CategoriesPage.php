@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace App\Livewire;
 
 use App\Models\Category;
+use Exception;
+use Illuminate\Contracts\View\View;
+use Illuminate\Support\Collection;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -17,6 +20,7 @@ final class CategoriesPage extends Component
     public string $searchTerm = '';
 
     public string $currentAutocomplete = '';
+
     public int $autocompleteIndex = 0;
 
     public function addCategory(): void
@@ -25,17 +29,17 @@ final class CategoriesPage extends Component
 
         try {
             $category = $this->createCategoryFromPath($this->newCategoryName);
-            
+
             session()->flash('message', "Category '{$category->getFullNameAttribute()}' created successfully.");
-        } catch (\Exception $e) {
-            session()->flash('error', 'Error creating category: ' . $e->getMessage());
+        } catch (Exception $e) {
+            session()->flash('error', 'Error creating category: '.$e->getMessage());
         }
 
         $this->newCategoryName = '';
         $this->autocompleteIndex = 0;
     }
 
-    public function updatedNewCategoryName()
+    public function updatedNewCategoryName(): void
     {
         // Reset autocomplete index when the input changes
         $this->autocompleteIndex = 0;
@@ -65,22 +69,23 @@ final class CategoriesPage extends Component
     }
 
     #[Computed]
-    public function categories()
+    public function categories(): Collection
     {
         $query = Category::forUser(auth()->id())
-            ->withCount('transactions');
+                         ->withCount('transactions');
 
         if ($this->searchTerm) {
             $query->where('name', 'like', '%'.$this->searchTerm.'%');
         }
 
-        return $query->defaultOrder()
+        return $query
+            ->defaultOrder()
             ->get()
             ->toTree();
     }
 
     #[Computed]
-    public function matchingSuggestions()
+    public function matchingSuggestions(): Collection
     {
         if (empty($this->newCategoryName)) {
             return collect();
@@ -89,16 +94,16 @@ final class CategoriesPage extends Component
         $searchTerm = mb_strtolower($this->newCategoryName);
 
         return Category::forUser(auth()->id())
-            ->withCount('transactions')
-            ->get()
-            ->filter(function ($category) use ($searchTerm) {
-                return str_contains(mb_strtolower($category->getFullNameAttribute()), $searchTerm);
-            })
-            ->take(5);
+                       ->withCount('transactions')
+                       ->get()
+                       ->filter(function ($category) use ($searchTerm) {
+                           return str_contains(mb_strtolower($category->getFullNameAttribute()), $searchTerm);
+                       })
+                       ->take(5);
     }
 
     #[Computed]
-    public function autocompleteOptions()
+    public function autocompleteOptions(): Collection
     {
         if (empty($this->newCategoryName)) {
             return collect();
@@ -106,7 +111,7 @@ final class CategoriesPage extends Component
 
         // Split the current input by '/' to understand the hierarchy level
         $parts = explode('/', $this->newCategoryName);
-        $currentPart = array_pop($parts); // The part we're currently typing
+        $currentPart = array_pop($parts);   // The part we're currently typing
         $parentPath = implode('/', $parts); // The parent path
 
         // Get all categories for this user
@@ -123,7 +128,7 @@ final class CategoriesPage extends Component
                 return mb_strtolower($category->getFullNameAttribute()) === mb_strtolower($parentPath);
             });
 
-            if (!$parentCategory) {
+            if (! $parentCategory) {
                 return collect();
             }
 
@@ -133,7 +138,7 @@ final class CategoriesPage extends Component
         }
 
         // Filter candidates by the current part being typed
-        if (!empty($currentPart)) {
+        if (! empty($currentPart)) {
             $candidates = $candidates->filter(function ($category) use ($currentPart) {
                 return str_starts_with(mb_strtolower($category->name), mb_strtolower($currentPart));
             });
@@ -143,10 +148,10 @@ final class CategoriesPage extends Component
     }
 
     #[Computed]
-    public function currentAutocompleteSuggestion()
+    public function currentAutocompleteSuggestion(): ?string
     {
         $options = $this->autocompleteOptions();
-        
+
         if ($options->isEmpty()) {
             return null;
         }
@@ -154,7 +159,7 @@ final class CategoriesPage extends Component
         $index = $this->autocompleteIndex % $options->count();
         $selectedCategory = $options->get($index);
 
-        if (!$selectedCategory) {
+        if (! $selectedCategory) {
             return null;
         }
 
@@ -166,24 +171,24 @@ final class CategoriesPage extends Component
         return implode('/', $parts);
     }
 
-    public function acceptAutocomplete()
+    public function acceptAutocomplete(): void
     {
         $suggestion = $this->currentAutocompleteSuggestion;
-        
+
         if ($suggestion) {
             $this->newCategoryName = $suggestion;
             $this->autocompleteIndex = 0;
         }
     }
 
-    public function nextAutocomplete()
+    public function nextAutocomplete(): void
     {
         if ($this->autocompleteOptions()->isNotEmpty()) {
             $this->autocompleteIndex = ($this->autocompleteIndex + 1) % $this->autocompleteOptions()->count();
         }
     }
 
-    public function previousAutocomplete()
+    public function previousAutocomplete(): void
     {
         $count = $this->autocompleteOptions()->count();
         if ($count > 0) {
@@ -191,7 +196,7 @@ final class CategoriesPage extends Component
         }
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.categories-page')
             ->layout('components.layouts.app', ['title' => 'Categories']);
@@ -209,16 +214,16 @@ final class CategoriesPage extends Component
 
             // First try exact match (case-sensitive)
             $category = Category::forUser(auth()->id())
-                ->where('name', $part)
-                ->where('parent_id', $parent?->id)
-                ->first();
+                                ->where('name', $part)
+                                ->where('parent_id', $parent?->id)
+                                ->first();
 
             // If not found, try case-insensitive match
             if (! $category) {
                 $category = Category::forUser(auth()->id())
-                    ->whereRaw('LOWER(name) = ?', [mb_strtolower($part)])
-                    ->where('parent_id', $parent?->id)
-                    ->first();
+                                    ->whereRaw('LOWER(name) = ?', [mb_strtolower($part)])
+                                    ->where('parent_id', $parent?->id)
+                                    ->first();
             }
 
             // If still not found, create new category

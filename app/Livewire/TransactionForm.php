@@ -47,7 +47,6 @@ final class TransactionForm extends Component
 
     public bool $reconciled = false;
 
-
     public bool $showCategoryForm = false;
 
     public string $newCategoryName = '';
@@ -215,6 +214,7 @@ final class TransactionForm extends Component
                 recurringPatternId : Optional::create(),
                 importId           : Optional::create(),
                 reconciled         : $this->reconciled,
+                status             : 'entered',
                 account            : Optional::create(),
                 category           : Optional::create(),
                 transferToAccount  : Optional::create(),

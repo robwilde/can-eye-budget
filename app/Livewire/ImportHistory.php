@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire;
 
 use App\Models\Import;
-use Illuminate\Support\Collection;
+use Illuminate\Contracts\View\View;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
@@ -22,8 +22,8 @@ final class ImportHistory extends Component
     public string $sortDirection = 'desc';
 
     protected $queryString = [
-        'statusFilter' => ['except' => 'all'],
-        'sortBy' => ['except' => 'imported_at'],
+        'statusFilter'  => ['except' => 'all'],
+        'sortBy'        => ['except' => 'imported_at'],
         'sortDirection' => ['except' => 'desc'],
     ];
 
@@ -77,7 +77,7 @@ final class ImportHistory extends Component
         $import->delete();
 
         $this->dispatch('import-deleted', [
-            'message' => 'Import deleted successfully',
+            'message'   => 'Import deleted successfully',
             'import_id' => $import->id,
         ]);
     }
@@ -100,6 +100,7 @@ final class ImportHistory extends Component
             $this->dispatch('import-error', [
                 'message' => 'Only failed imports can be reprocessed',
             ]);
+
             return;
         }
 
@@ -112,18 +113,18 @@ final class ImportHistory extends Component
         $imports = Auth::user()->imports();
 
         return [
-            'all' => $imports->count(),
-            'completed' => $imports->where('status', 'completed')->count(),
-            'failed' => $imports->where('status', 'failed')->count(),
+            'all'        => $imports->count(),
+            'completed'  => $imports->where('status', 'completed')->count(),
+            'failed'     => $imports->where('status', 'failed')->count(),
             'processing' => $imports->where('status', 'processing')->count(),
-            'pending' => $imports->where('status', 'pending')->count(),
+            'pending'    => $imports->where('status', 'pending')->count(),
         ];
     }
 
-    public function render()
+    public function render(): View
     {
         return view('livewire.import-history', [
-            'imports' => $this->getImportsProperty(),
+            'imports'      => $this->getImportsProperty(),
             'statusCounts' => $this->getStatusCounts(),
         ])->layout('components.layouts.app', ['title' => 'Import History']);
     }

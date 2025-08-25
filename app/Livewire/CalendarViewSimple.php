@@ -99,14 +99,14 @@ final class CalendarViewSimple extends Component
     {
         return [
             'planned' => [
-                'income' => 0,
+                'income'   => 0,
                 'expenses' => 0,
-                'net' => 0,
+                'net'      => 0,
             ],
             'entered' => [
-                'income' => 0,
+                'income'   => 0,
                 'expenses' => 0,
-                'net' => 0,
+                'net'      => 0,
             ],
             'percentage_saved' => 0,
         ];

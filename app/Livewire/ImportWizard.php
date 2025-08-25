@@ -7,10 +7,11 @@ namespace App\Livewire;
 use App\Models\Account;
 use App\Models\Import;
 use App\Services\ImportService;
+use Exception;
+use Illuminate\Contracts\View\View;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Livewire\WithFileUploads;
@@ -78,8 +79,8 @@ final class ImportWizard extends Component
 
     public function nextStep(): void
     {
-        $currentIndex = array_search($this->currentStep, $this->steps);
-        
+        $currentIndex = array_search($this->currentStep, $this->steps, true);
+
         if ($currentIndex !== false && $currentIndex < count($this->steps) - 1) {
             $this->currentStep = $this->steps[$currentIndex + 1];
         }
@@ -87,8 +88,8 @@ final class ImportWizard extends Component
 
     public function previousStep(): void
     {
-        $currentIndex = array_search($this->currentStep, $this->steps);
-        
+        $currentIndex = array_search($this->currentStep, $this->steps, true);
+
         if ($currentIndex !== false && $currentIndex > 0) {
             $this->currentStep = $this->steps[$currentIndex - 1];
         }
@@ -96,7 +97,7 @@ final class ImportWizard extends Component
 
     public function goToStep(string $step): void
     {
-        if (in_array($step, $this->steps)) {
+        if (in_array($step, $this->steps, true)) {
             $this->currentStep = $step;
         }
     }
@@ -105,35 +106,35 @@ final class ImportWizard extends Component
     {
         $this->validate([
             'selectedAccountId' => 'required|exists:accounts,id',
-            'csvFile' => 'required|file|mimes:csv,txt|max:10240',
+            'csvFile'           => 'required|file|mimes:csv,txt|max:10240',
         ]);
 
         try {
             // Read CSV headers
             $this->csvHeaders = $this->readCsvHeaders();
-            
+
             // Auto-detect column mapping
             $this->detectedMapping = $this->importService->detectColumns($this->csvHeaders);
             $this->columnMapping = $this->detectedMapping;
 
             $this->nextStep();
-            
-        } catch (\Exception $e) {
-            $this->errorMessage = 'Failed to process CSV file: ' . $e->getMessage();
+        } catch (Exception $e) {
+            $this->errorMessage = 'Failed to process CSV file: '.$e->getMessage();
         }
     }
 
     public function processMapping(): void
     {
         $this->validate([
-            'columnMapping.date' => 'required',
+            'columnMapping.date'        => 'required',
             'columnMapping.description' => 'required',
         ]);
 
         // Validate that we have either amount OR both debit/credit
-        if (empty($this->columnMapping['amount']) && 
+        if (empty($this->columnMapping['amount']) &&
             (empty($this->columnMapping['debit']) || empty($this->columnMapping['credit']))) {
             $this->addError('columnMapping.amount', 'You must map either Amount OR both Debit and Credit columns.');
+
             return;
         }
 
@@ -142,16 +143,14 @@ final class ImportWizard extends Component
             $previewResult = $this->importService->previewImport(
                 $this->csvFile,
                 $this->columnMapping,
-                10
             );
 
             $this->previewData = $previewResult['preview_data']->toArray();
             $this->totalRows = $previewResult['total_rows'];
 
             $this->nextStep();
-            
-        } catch (\Exception $e) {
-            $this->errorMessage = 'Failed to process column mapping: ' . $e->getMessage();
+        } catch (Exception $e) {
+            $this->errorMessage = 'Failed to process column mapping: '.$e->getMessage();
         }
     }
 
@@ -165,29 +164,28 @@ final class ImportWizard extends Component
     {
         try {
             $account = Account::findOrFail($this->selectedAccountId);
-            
+
             // Create import record
             $this->import = $this->importService->createImport(Auth::user(), $this->csvFile);
-            
+
             // Process the import
             $result = $this->importService->processImport(
                 $this->import,
                 $account,
-                $this->columnMapping
+                $this->columnMapping,
             );
 
             $this->importResult = [
-                'success' => $result->success,
-                'created_count' => $result->created_count,
+                'success'         => $result->success,
+                'created_count'   => $result->created_count,
                 'duplicate_count' => $result->duplicate_count,
-                'total_rows' => $result->total_rows,
-                'error' => $result->error ?? null,
+                'total_rows'      => $result->total_rows,
+                'error'           => $result->error ?? null,
             ];
 
             $this->nextStep();
-            
-        } catch (\Exception $e) {
-            $this->errorMessage = 'Failed to import CSV: ' . $e->getMessage();
+        } catch (Exception $e) {
+            $this->errorMessage = 'Failed to import CSV: '.$e->getMessage();
         }
     }
 
@@ -203,7 +201,7 @@ final class ImportWizard extends Component
 
     public function getAvailableColumnsProperty(): array
     {
-        return array_map(function ($index, $header) {
+        return array_map(static function ($index, $header) {
             return [
                 'value' => $header,
                 'label' => $header,
@@ -214,7 +212,7 @@ final class ImportWizard extends Component
 
     public function getCurrentStepIndexProperty(): int
     {
-        return array_search($this->currentStep, $this->steps) ?: 0;
+        return array_search($this->currentStep, $this->steps, true) ?: 0;
     }
 
     public function getProgressPercentageProperty(): float
@@ -222,21 +220,21 @@ final class ImportWizard extends Component
         return ($this->getCurrentStepIndexProperty() / (count($this->steps) - 1)) * 100;
     }
 
+    public function render(): View
+    {
+        return view('livewire.import-wizard')->layout('components.layouts.app', ['title' => 'Import Wizard']);
+    }
+
     private function readCsvHeaders(): array
     {
         $path = $this->csvFile->getRealPath();
         $headers = [];
 
-        if (($handle = fopen($path, 'r')) !== false) {
+        if (($handle = fopen($path, 'rb')) !== false) {
             $headers = fgetcsv($handle) ?: [];
             fclose($handle);
         }
 
         return $headers;
-    }
-
-    public function render()
-    {
-        return view('livewire.import-wizard')->layout('components.layouts.app', ['title' => 'Import Wizard']);
     }
 }
