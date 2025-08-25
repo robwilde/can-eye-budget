@@ -112,7 +112,7 @@ final class ImportService
             'total_rows'       => $csvData->count(),
             'preview_data'     => $processedData,
             'column_mapping'   => $columnMapping,
-            'detected_columns' => $this->detectColumns([$csvData->first()]),
+            'detected_columns' => $this->detectColumns(array_keys((array) $csvData->first())),
         ];
     }
 
