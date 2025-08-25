@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use App\Models\Import;
 use App\Models\User;
-use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\Rule;
@@ -58,21 +58,21 @@ final class ImportData extends Data
         $this->is_processing = in_array($this->status, ['pending', 'processing']);
     }
 
-    public static function fromModel(\App\Models\Import $import): self
+    public static function fromModel(Import $import): self
     {
         return new self(
-            id: $import->id,
-            user_id: $import->user_id,
-            filename: $import->filename,
-            imported_at: $import->imported_at,
-            row_count: $import->row_count ?? 0,
-            matched_count: $import->matched_count ?? 0,
-            status: $import->status,
-            user: $import->relationLoaded('user') ? $import->user : Optional::create(),
+            id              : $import->id,
+            user_id         : $import->user_id,
+            filename        : $import->filename,
+            imported_at     : $import->imported_at,
+            row_count       : $import->row_count ?? 0,
+            matched_count   : $import->matched_count ?? 0,
+            status          : $import->status,
+            user            : $import->relationLoaded('user') ? $import->user : Optional::create(),
             match_percentage: Optional::create(),
-            is_complete: Optional::create(),
-            is_failed: Optional::create(),
-            is_processing: Optional::create(),
+            is_complete     : Optional::create(),
+            is_failed       : Optional::create(),
+            is_processing   : Optional::create(),
         );
     }
 

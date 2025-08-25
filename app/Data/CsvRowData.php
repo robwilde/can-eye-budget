@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Data;
 
 use App\Models\Category;
+use App\Services\DateParsing\DateParserFactory;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
+use Illuminate\Contracts\Container\BindingResolutionException;
 use Spatie\LaravelData\Attributes\WithCast;
 use Spatie\LaravelData\Casts\DateTimeInterfaceCast;
 use Spatie\LaravelData\Data;
@@ -31,29 +33,37 @@ final class CsvRowData extends Data
         public Optional|int|null $category_id,
     ) {}
 
+    /**
+     * @throws BindingResolutionException
+     */
     public static function fromArray(array $data): self
     {
         $date = $data['date'] ?? now();
-        
-        // Ensure date is a Carbon instance
+
+        // Ensure date is a Carbon instance using locale-aware parsing
         if (is_string($date)) {
-            $date = Carbon::parse($date);
-        } elseif (!$date instanceof CarbonInterface) {
+            $dateParserFactory = app(DateParserFactory::class);
+            $parser = $dateParserFactory->make();
+            $parsed = $parser->parse($date);
+
+            // Convert to Carbon and fallback to now() if parsing fails
+            $date = $parsed ? Carbon::instance($parsed) : now();
+        } elseif (! $date instanceof CarbonInterface) {
             $date = now();
         }
-        
+
         return new self(
-            raw_data: $data['raw_data'] ?? [],
-            csv_row_hash: $data['csv_row_hash'] ?? '',
-            type: $data['type'] ?? 'expense',
-            amount: (float) ($data['amount'] ?? 0),
-            description: $data['description'] ?? '',
-            date: $date,
-            debit: isset($data['debit']) ? (float) $data['debit'] : Optional::create(),
-            credit: isset($data['credit']) ? (float) $data['credit'] : Optional::create(),
-            balance: isset($data['balance']) ? (float) $data['balance'] : Optional::create(),
+            raw_data          : $data['raw_data'] ?? [],
+            csv_row_hash      : $data['csv_row_hash'] ?? '',
+            type              : $data['type'] ?? 'expense',
+            amount            : (float) ($data['amount'] ?? 0),
+            description       : $data['description'] ?? '',
+            date              : $date,
+            debit             : isset($data['debit']) ? (float) $data['debit'] : Optional::create(),
+            credit            : isset($data['credit']) ? (float) $data['credit'] : Optional::create(),
+            balance           : isset($data['balance']) ? (float) $data['balance'] : Optional::create(),
             suggested_category: $data['suggested_category'] ?? Optional::create(),
-            category_id: $data['category_id'] ?? Optional::create(),
+            category_id       : $data['category_id'] ?? Optional::create(),
         );
     }
 }

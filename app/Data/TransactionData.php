@@ -8,7 +8,8 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Import;
 use App\Models\RecurringPattern;
-use Carbon\Carbon;
+use App\Models\Transaction;
+use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\MapName;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\Rule;
@@ -35,7 +36,7 @@ final class TransactionData extends Data
         public string $description,
 
         #[Required, WithCast(DateTimeInterfaceCast::class, format: 'Y-m-d')]
-        public Carbon $transaction_date,
+        public CarbonInterface $transaction_date,
 
         public Optional|int|null $category_id,
 
@@ -49,6 +50,9 @@ final class TransactionData extends Data
         public Optional|int|null $importId,
 
         public Optional|bool $reconciled,
+
+        #[Rule('in:entered,planned')]
+        public Optional|string $status,
 
         // Relationships (optional for when we need them)
         public Optional|Account $account,
@@ -64,38 +68,44 @@ final class TransactionData extends Data
     ) {
         // Set defaults
         $this->reconciled = $this->reconciled ?? false;
+        $this->status = $this->status ?? 'entered';
 
         // Compute derived values
         $this->signed_amount = match ($this->type) {
-            'income'   => $this->amount,
-            'expense'  => -$this->amount,
-            'transfer' => -$this->amount,
-            default    => 0
+            'income' => $this->amount,
+            'expense', 'transfer' => -$this->amount,
+            default => 0
         };
 
         $this->is_transfer = $this->type === 'transfer';
         $this->is_recurring = ! is_null($this->recurringPatternId instanceof Optional ? null : $this->recurringPatternId);
     }
 
-    public static function fromModel(\App\Models\Transaction $transaction): self
+    public static function fromModel(Transaction $transaction): self
     {
         return new self(
-            id: $transaction->id,
-            account_id: $transaction->account_id,
-            type: $transaction->type,
-            amount: (float) $transaction->amount,
-            description: $transaction->description,
-            transaction_date: $transaction->transaction_date,
-            category_id: $transaction->category_id,
+            id                 : $transaction->id,
+            account_id         : $transaction->account_id,
+            type               : $transaction->type,
+            amount             : (float) $transaction->amount,
+            description        : $transaction->description,
+            transaction_date   : $transaction->transaction_date,
+            category_id        : $transaction->category_id,
             transferToAccountId: $transaction->transfer_to_account_id,
-            recurringPatternId: $transaction->recurring_pattern_id,
-            importId: $transaction->import_id,
-            reconciled: $transaction->reconciled,
-            account: Optional::create()->when($transaction->relationLoaded('account'), $transaction->account),
-            category: Optional::create()->when($transaction->relationLoaded('category'), $transaction->category),
-            transferToAccount: Optional::create()->when($transaction->relationLoaded('transferToAccount'), $transaction->transferToAccount),
-            recurringPattern: Optional::create()->when($transaction->relationLoaded('recurringPattern'), $transaction->recurringPattern),
-            import: Optional::create()->when($transaction->relationLoaded('import'), $transaction->import),
+            recurringPatternId : $transaction->recurring_pattern_id,
+            importId           : $transaction->import_id,
+            reconciled         : $transaction->reconciled,
+            status             : $transaction->status ?? 'entered',
+            account            : $transaction->relationLoaded('account') ? $transaction->account : Optional::create(),
+            category           : $transaction->relationLoaded('category') ? $transaction->category : Optional::create(),
+            transferToAccount  : $transaction->relationLoaded('transferToAccount') ? $transaction->transferToAccount : Optional::create(),
+            recurringPattern   : $transaction->relationLoaded('recurringPattern') ? $transaction->recurringPattern : Optional::create(),
+            import             : $transaction->relationLoaded('import') ? $transaction->import : Optional::create(),
+
+            // Computed properties (let constructor calculate these)
+            signed_amount      : Optional::create(),
+            is_transfer        : Optional::create(),
+            is_recurring       : Optional::create(),
         );
     }
 
@@ -112,6 +122,7 @@ final class TransactionData extends Data
             'recurring_pattern_id'   => $this->recurringPatternId instanceof Optional ? null : $this->recurringPatternId,
             'import_id'              => $this->importId instanceof Optional ? null : $this->importId,
             'reconciled'             => $this->reconciled instanceof Optional ? false : $this->reconciled,
+            'status'                 => $this->status instanceof Optional ? 'entered' : $this->status,
         ];
     }
 
