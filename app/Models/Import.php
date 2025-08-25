@@ -26,11 +26,11 @@ final class Import extends Model
     ];
 
     protected $casts = [
-        'imported_at'           => 'datetime',
-        'row_count'             => 'integer',
-        'matched_count'         => 'integer',
-        'column_mapping'        => 'array',
-        'processing_metadata'   => 'array',
+        'imported_at'         => 'datetime',
+        'row_count'           => 'integer',
+        'matched_count'       => 'integer',
+        'column_mapping'      => 'array',
+        'processing_metadata' => 'array',
     ];
 
     public function user(): BelongsTo
