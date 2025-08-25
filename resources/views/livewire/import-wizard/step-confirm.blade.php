@@ -154,7 +154,6 @@
     <div class="flex justify-end pt-6">
         <flux:button 
             variant="primary"
-            size="lg"
             wire:click="processImport"
             wire:loading.attr="disabled"
             wire:target="processImport">

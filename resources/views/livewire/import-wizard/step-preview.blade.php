@@ -82,7 +82,11 @@
                         @foreach($previewData as $row)
                             <tr class="hover:bg-gray-50 dark:hover:bg-gray-700">
                                 <td class="px-4 py-3 text-sm text-gray-900 dark:text-white whitespace-nowrap">
-                                    {{ isset($row['date']) ? $row['date']->format('M j, Y') : 'N/A' }}
+                                    @if(isset($row['date']))
+                                        {{ is_object($row['date']) ? $row['date']->format('M j, Y') : \Carbon\Carbon::parse($row['date'])->format('M j, Y') }}
+                                    @else
+                                        N/A
+                                    @endif
                                 </td>
                                 <td class="px-4 py-3 text-sm whitespace-nowrap">
                                     <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
