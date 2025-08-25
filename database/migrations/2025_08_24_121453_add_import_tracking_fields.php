@@ -18,11 +18,11 @@ return new class extends Migration
             $table->decimal('confidence_score', 3, 2)->nullable()->after('reconciled');
             $table->boolean('auto_categorized')->default(false)->after('confidence_score');
             $table->json('import_metadata')->nullable()->after('auto_categorized');
-            
+
             $table->index(['auto_categorized']);
             $table->index(['confidence_score']);
         });
-        
+
         Schema::table('imports', function (Blueprint $table) {
             $table->string('csv_file_path')->nullable()->after('filename');
             $table->json('column_mapping')->nullable()->after('csv_file_path');
@@ -38,7 +38,7 @@ return new class extends Migration
         Schema::table('transactions', function (Blueprint $table) {
             $table->dropIndex(['auto_categorized']);
             $table->dropIndex(['confidence_score']);
-            
+
             $table->dropColumn([
                 'original_description',
                 'confidence_score',
@@ -46,7 +46,7 @@ return new class extends Migration
                 'import_metadata',
             ]);
         });
-        
+
         Schema::table('imports', function (Blueprint $table) {
             $table->dropColumn([
                 'csv_file_path',

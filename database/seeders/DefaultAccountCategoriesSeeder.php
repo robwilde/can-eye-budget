@@ -14,23 +14,24 @@ final class DefaultAccountCategoriesSeeder extends Seeder
     {
         // Get the default user
         $user = User::where('email', 'figjam@mrwilde.com')->first();
-        
-        if (!$user) {
+
+        if (! $user) {
             $this->command->warn('Default user not found. Please run DefaultUserSeeder first.');
+
             return;
         }
 
         // Create default account categories
         $categories = [
             [
-                'name' => 'day-to-day',
+                'name'            => 'day-to-day',
                 'display_in_list' => true,
-                'sort_order' => 0,
+                'sort_order'      => 0,
             ],
             [
-                'name' => 'hidden',
+                'name'            => 'hidden',
                 'display_in_list' => false,
-                'sort_order' => 1,
+                'sort_order'      => 1,
             ],
         ];
 
@@ -38,9 +39,9 @@ final class DefaultAccountCategoriesSeeder extends Seeder
             AccountCategory::firstOrCreate(
                 [
                     'user_id' => $user->id,
-                    'name' => $categoryData['name'],
+                    'name'    => $categoryData['name'],
                 ],
-                array_merge($categoryData, ['user_id' => $user->id])
+                array_merge($categoryData, ['user_id' => $user->id]),
             );
         }
 

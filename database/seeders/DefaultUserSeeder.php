@@ -16,11 +16,11 @@ final class DefaultUserSeeder extends Seeder
         User::firstOrCreate(
             ['email' => 'figjam@mrwilde.com'],
             [
-                'name' => 'Bobby Wilde',
-                'email' => 'figjam@mrwilde.com',
-                'password' => Hash::make('H@rd24G$t'),
+                'name'              => 'Bobby Wilde',
+                'email'             => 'figjam@mrwilde.com',
+                'password'          => Hash::make('password'),
                 'email_verified_at' => now(),
-            ]
+            ],
         );
     }
 }
