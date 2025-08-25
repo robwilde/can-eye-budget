@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Models\User;
-
 // Skip all recurring transaction tests as the functionality is not implemented in this branch
 test('recurring transaction functionality not implemented', function () {
     expect(true)->toBeTrue();

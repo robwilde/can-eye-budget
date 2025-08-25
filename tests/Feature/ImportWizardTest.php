@@ -45,7 +45,7 @@ test('import wizard processes valid CSV upload', function () {
     $csvContent = "Effective Date,Entered Date,Transaction Description,Amount,Balance\n";
     $csvContent .= "01/03/2025,02/03/2025,\"POS - #459939 - PAYPAL *PYPL Payin4\",-22.25,953.72\n";
     $csvContent .= "05/03/2025,05/03/2025,\"Osko Payment From Robert E Wilde\",400.00,1250.97\n";
-    
+
     $csvFile = UploadedFile::fake()->createWithContent('test_import.csv', $csvContent);
 
     Livewire::actingAs($this->user)
@@ -60,7 +60,7 @@ test('import wizard processes valid CSV upload', function () {
 test('import wizard detects CSV columns correctly', function () {
     $csvContent = "Effective Date,Entered Date,Transaction Description,Amount,Balance\n";
     $csvContent .= "01/03/2025,02/03/2025,\"Test Transaction\",-22.25,953.72\n";
-    
+
     $csvFile = UploadedFile::fake()->createWithContent('test_import.csv', $csvContent);
 
     Livewire::actingAs($this->user)
@@ -121,7 +121,7 @@ test('import wizard generates preview data correctly', function () {
         ->call('processMapping');
 
     $previewData = $component->get('previewData');
-    
+
     expect($previewData)->toHaveCount(2);
     expect($previewData[0]['type'])->toBe('expense');
     expect($previewData[0]['amount'])->toBe(22.25);
@@ -180,11 +180,11 @@ test('import wizard creates import record and transactions', function () {
 
     // Check transactions were created
     expect($this->account->transactions()->count())->toBe(2);
-    
+
     $transactions = $this->account->transactions()->orderBy('amount')->get();
-    expect($transactions->first()->amount)->toBe(22.25);
+    expect((float) $transactions->first()->amount)->toBe(22.25);
     expect($transactions->first()->type)->toBe('expense');
-    expect($transactions->last()->amount)->toBe(400.00);
+    expect((float) $transactions->last()->amount)->toBe(400.00);
     expect($transactions->last()->type)->toBe('income');
 
     // Check component shows results
@@ -194,15 +194,16 @@ test('import wizard creates import record and transactions', function () {
 });
 
 test('import wizard handles CSV parsing errors gracefully', function () {
-    $csvContent = "Invalid CSV content without proper structure";
+    $csvContent = 'Invalid CSV content without proper structure';
     $csvFile = UploadedFile::fake()->createWithContent('invalid.csv', $csvContent);
 
-    Livewire::actingAs($this->user)
+    $component = Livewire::actingAs($this->user)
         ->test(ImportWizard::class)
         ->set('selectedAccountId', $this->account->id)
         ->set('csvFile', $csvFile)
-        ->call('processUpload')
-        ->assertNotEmpty('errorMessage');
+        ->call('processUpload');
+
+    expect($component->get('errorMessage'))->not->toBeNull();
 });
 
 test('import wizard shows progress percentage correctly', function () {
@@ -222,12 +223,12 @@ test('import wizard shows progress percentage correctly', function () {
 
 test('import wizard loads user accounts correctly', function () {
     $secondAccount = Account::factory()->for($this->user)->create(['name' => 'Second Account']);
-    
+
     $component = Livewire::actingAs($this->user)
         ->test(ImportWizard::class);
 
     $userAccounts = $component->get('user_accounts');
-    
+
     expect($userAccounts)->toHaveCount(2);
     expect($userAccounts->pluck('name'))->toContain('Second Account');
 });
