@@ -14,7 +14,7 @@
     <!-- Scripts -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     @livewireStyles
-    @fluxStyles
+    @fluxAppearance
 </head>
 <body class="h-full font-sans antialiased">
     <div class="min-h-full flex flex-col justify-center py-12 sm:px-6 lg:px-8">
