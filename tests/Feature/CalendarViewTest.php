@@ -77,14 +77,14 @@ test('calendar view displays transactions correctly', function () {
             ->assertSeeHtml('title="Test Transaction"'); // Description in tooltip
 });
 
-test('calendar view simple defaults to current week', function () {
+test('calendar view simple defaults to current month', function () {
     $user = User::factory()->create();
     $this->actingAs($user);
 
     $component = Livewire::test('calendar-view-simple');
 
-    // Should default to week view
-    $component->assertSet('view', 'week');
+    // Should default to month view (from config)
+    $component->assertSet('view', 'month');
 
     // Should default to current date
     $currentDate = $component->get('currentDate');

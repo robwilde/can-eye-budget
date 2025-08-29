@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Data;
 
+use App\Models\Import;
 use App\Models\User;
-use Carbon\Carbon;
+use Carbon\CarbonInterface;
 use Spatie\LaravelData\Attributes\Validation\Required;
 use Spatie\LaravelData\Attributes\Validation\Rule;
 use Spatie\LaravelData\Attributes\WithCast;
@@ -25,7 +26,7 @@ final class ImportData extends Data
         public string $filename,
 
         #[Required, WithCast(DateTimeInterfaceCast::class)]
-        public Carbon $imported_at,
+        public CarbonInterface $imported_at,
 
         public int $row_count,
         public int $matched_count,
@@ -57,17 +58,21 @@ final class ImportData extends Data
         $this->is_processing = in_array($this->status, ['pending', 'processing']);
     }
 
-    public static function fromModel(\App\Models\Import $import): self
+    public static function fromModel(Import $import): self
     {
         return new self(
-            id: $import->id,
-            user_id: $import->user_id,
-            filename: $import->filename,
-            imported_at: $import->imported_at,
-            row_count: $import->row_count,
-            matched_count: $import->matched_count,
-            status: $import->status,
-            user: Optional::create()->when($import->relationLoaded('user'), $import->user),
+            id              : $import->id,
+            user_id         : $import->user_id,
+            filename        : $import->filename,
+            imported_at     : $import->imported_at,
+            row_count       : $import->row_count ?? 0,
+            matched_count   : $import->matched_count ?? 0,
+            status          : $import->status,
+            user            : $import->relationLoaded('user') ? $import->user : Optional::create(),
+            match_percentage: Optional::create(),
+            is_complete     : Optional::create(),
+            is_failed       : Optional::create(),
+            is_processing   : Optional::create(),
         );
     }
 

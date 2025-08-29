@@ -13,7 +13,11 @@ use Livewire\Component;
 
 final class CalendarViewSimple extends Component
 {
-    public string $view = 'week'; // 'day', 'week', 'month', 'year'
+    public string $view {
+        set {
+            $this->view = $value;
+        }
+    }
 
     public Carbon $currentDate;
 
@@ -21,6 +25,7 @@ final class CalendarViewSimple extends Component
 
     public function mount(): void
     {
+        $this->view = config('app.dashboard.view');
         $this->currentDate = Carbon::now();
     }
 
@@ -99,14 +104,14 @@ final class CalendarViewSimple extends Component
     {
         return [
             'planned' => [
-                'income' => 0,
+                'income'   => 0,
                 'expenses' => 0,
-                'net' => 0,
+                'net'      => 0,
             ],
             'entered' => [
-                'income' => 0,
+                'income'   => 0,
                 'expenses' => 0,
-                'net' => 0,
+                'net'      => 0,
             ],
             'percentage_saved' => 0,
         ];
@@ -115,6 +120,7 @@ final class CalendarViewSimple extends Component
     public function setView(string $view): void
     {
         $this->view = $view;
+        $this->dispatch('view-changed', $view);
     }
 
     public function selectAccount(?int $accountId): void
@@ -152,6 +158,11 @@ final class CalendarViewSimple extends Component
         $this->dispatch('open-transaction-form-for-date', $date);
     }
 
+    public function openTransactionForDay(string $date): void
+    {
+        $this->dispatch('open-transaction-form-for-date', $date);
+    }
+
     public function render(): View
     {
         return view('livewire.calendar-view-simple');
@@ -170,6 +181,5 @@ final class CalendarViewSimple extends Component
     private function getDateRange(): array
     {
         return CalendarHelper::getDateRange($this->currentDate, $this->view);
-
     }
 }

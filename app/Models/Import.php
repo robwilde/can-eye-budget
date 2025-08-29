@@ -14,17 +14,23 @@ final class Import extends Model
     use HasFactory;
 
     protected $fillable = [
+        'user_id',
         'filename',
         'imported_at',
         'row_count',
         'matched_count',
         'status',
+        'csv_file_path',
+        'column_mapping',
+        'processing_metadata',
     ];
 
     protected $casts = [
-        'imported_at'   => 'datetime',
-        'row_count'     => 'integer',
-        'matched_count' => 'integer',
+        'imported_at'         => 'datetime',
+        'row_count'           => 'integer',
+        'matched_count'       => 'integer',
+        'column_mapping'      => 'array',
+        'processing_metadata' => 'array',
     ];
 
     public function user(): BelongsTo
