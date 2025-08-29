@@ -423,7 +423,7 @@ final class ImportService
                     type               : $csvRow->type,
                     amount             : $csvRow->amount,
                     description        : $csvRow->description,
-                    transaction_date   : Carbon::instance($csvRow->date),
+                    transaction_date   : $csvRow->date,
                     category_id        : $csvRow->category_id instanceof Optional ? null : $csvRow->category_id,
                     transferToAccountId: Optional::create(),
                     recurringPatternId : Optional::create(),
