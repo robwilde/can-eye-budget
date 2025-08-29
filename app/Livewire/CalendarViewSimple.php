@@ -117,6 +117,12 @@ final class CalendarViewSimple extends Component
         ];
     }
 
+    public function setView(string $view): void
+    {
+        $this->view = $view;
+        $this->dispatch('view-changed', $view);
+    }
+
     public function selectAccount(?int $accountId): void
     {
         $this->selectedAccountId = $accountId;
