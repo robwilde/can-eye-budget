@@ -4,19 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a personal budgeting application built with Laravel 12 and PHP 8.4, using the Livewire starter kit with Flux UI components. The application features calendar-based views for income/expenses, projections, and bank reconciliation capabilities.
+This is a personal budgeting application built with Laravel 12 and PHP 8.4, using the Livewire starter kit with Flux UI components. The application features
+calendar-based views for income/expenses, projections, and bank reconciliation capabilities.
 
 ## Documentation References
 
 - The PEST PHP Docs are available for reference: https://context7.com/pestphp/docs/llms.txt
 - Debug tools documentation:
-  - `barryvdh/laravel-debugbar` reference: http://phpdebugbar.com/docs/all.html
-  - `spatie\laravel-ray` reference: https://context7.com/spatie/myray.app/llms.txt
+    - `barryvdh/laravel-debugbar` reference: http://phpdebugbar.com/docs/all.html
+    - `spatie\laravel-ray` reference: https://context7.com/spatie/myray.app/llms.txt
 
 ## Essential Commands
 
 ### Development Environment Status
-**IMPORTANT**: The Laravel application is always running in a separate terminal session via `composer dev`. 
+
+**IMPORTANT**: The Laravel application is always running in a separate terminal session via `composer dev`.
+
 - The dev server is typically running on http://localhost:8000
 - DO NOT start additional Laravel servers unless specifically requested
 - View logs in real-time using the existing terminal or `storage/logs/laravel.log`
@@ -24,6 +27,7 @@ This is a personal budgeting application built with Laravel 12 and PHP 8.4, usin
 - Vite hot reload handles frontend asset changes
 
 ### Development
+
 ```bash
 # Start full development environment (server, queue, logs, vite)
 composer dev
@@ -36,12 +40,14 @@ php artisan pail              # Real-time log viewer
 ```
 
 ### Build & Assets
+
 ```bash
 npm run build                 # Production build with Vite
 npm run dev                   # Development build with hot reload
 ```
 
 ### Testing
+
 ```bash
 composer test                 # Run full test suite (clears config + runs tests)
 php artisan test             # Run tests directly
@@ -56,6 +62,7 @@ php artisan test             # Run tests directly
 ```
 
 ### Code Quality
+
 ```bash
 composer pint                 # Fix code style with Laravel Pint
 ./vendor/bin/pint            # Direct Pint execution
@@ -63,6 +70,7 @@ composer pint                 # Fix code style with Laravel Pint
 ```
 
 ### Database
+
 ```bash
 php artisan migrate          # Run migrations
 php artisan migrate:fresh --seed  # Fresh migration with seeding
@@ -70,6 +78,7 @@ php artisan db:seed          # Run seeders
 ```
 
 ### Debugging & Cache Management
+
 ```bash
 # Clear caches when encountering issues
 php artisan cache:clear      # Clear application cache
@@ -85,6 +94,7 @@ tail -20 storage/logs/laravel.log  # View last 20 lines
 ## Architecture Overview
 
 ### Tech Stack
+
 - **Backend**: Laravel 12, PHP 8.4, SQLite (development)
 - **Frontend**: Livewire, Volt, Flux UI, Tailwind CSS 4, Alpine.js
 - **Testing**: PEST PHP with Laravel plugin
@@ -93,21 +103,25 @@ tail -20 storage/logs/laravel.log  # View last 20 lines
 ### Key Components
 
 #### Livewire Integration
+
 - Uses **Traditional Livewire Components** in `app/Livewire/`
 - Standard Laravel routes for page views in `routes/web.php`
 - Blade templates stored separately in `resources/views/`
 
 #### UI Framework
+
 - **Flux UI** components for consistent design system
 - Custom Flux components in `resources/views/flux/`
 - Tailwind CSS 4 with Vite plugin integration
 
 #### Authentication
+
 - Laravel Breeze-style authentication with Livewire
 - Auth routes in `routes/auth.php`
 - Settings pages: profile, password, appearance
 
 ### File Structure Patterns
+
 ```
 app/Livewire/              # Traditional Livewire components
 resources/views/livewire/   # Blade templates for Livewire components
@@ -120,7 +134,9 @@ tests/Unit/               # Unit tests
 ## Development Workflow
 
 ### Budget Application Context
+
 Refer to `docs/budget-app-context.md` for comprehensive feature requirements including:
+
 - Transaction management (income, expense, transfer)
 - Recurring transaction patterns
 - Hierarchical category system
@@ -129,7 +145,9 @@ Refer to `docs/budget-app-context.md` for comprehensive feature requirements inc
 - Database schema for accounts, transactions, categories
 
 ### Database Design
+
 The application follows a multi-entity budget model:
+
 - Users can have multiple accounts
 - Transactions belong to accounts and categories
 - Categories support hierarchical nesting
@@ -137,6 +155,7 @@ The application follows a multi-entity budget model:
 - Import tracking for CSV reconciliation
 
 ### Testing Strategy
+
 - PEST PHP 4 with Laravel integration
 - RefreshDatabase for Feature tests
 - SQLite in-memory database for testing
@@ -146,6 +165,7 @@ The application follows a multi-entity budget model:
 - Compact output format for cleaner test results
 
 ### Code Style
+
 - Laravel Pint for PHP code formatting
 - Uses PHP 8.4 features and syntax
 - Follows Laravel conventions and best practices
@@ -153,11 +173,13 @@ The application follows a multi-entity budget model:
 ## Key Configuration
 
 ### Environment
+
 - SQLite database: `database/database.sqlite`
 - Testing uses in-memory SQLite
 - Vite with TailwindCSS and Laravel plugins
 
 ### Dependencies
+
 - Core: Laravel 12, Livewire, Volt, Flux UI
 - Testing: PEST PHP 4 with Laravel plugin, mutation testing, architecture testing
 - Build: Vite, TailwindCSS 4, Laravel Vite plugin
@@ -166,6 +188,7 @@ The application follows a multi-entity budget model:
 ## PEST 4 Features
 
 ### Mutation Testing
+
 Mutation testing is available to assess test quality by introducing small changes to code and verifying tests catch them:
 
 ```bash
@@ -180,12 +203,15 @@ XDEBUG_MODE=coverage ./vendor/bin/pest --mutate --class=App\\Models
 ```
 
 ### Architecture Testing
+
 Architecture presets are automatically applied via `tests/Pest.php`:
+
 - Laravel preset: Enforces Laravel best practices
 - Security preset: Prevents insecure coding patterns
 - Custom rules: Enforces naming conventions and inheritance patterns
 
 ### Test Coverage
+
 Use `covers()` function in tests to specify which classes are being tested for mutation testing:
 
 ```php
@@ -197,6 +223,7 @@ test('user model test', function () {
 ```
 
 ### Special Features
+
 - Concurrent development workflow via `composer dev`
 - Flux UI component system for consistent design
 - Volt for simplified Livewire development
@@ -204,46 +231,50 @@ test('user model test', function () {
 
 ## Development Progress Status
 
-### Current Status: Phase 3 Complete ✅
+### Current Status: Phase 4 In Progress 🚧
 
-**Overall Progress: ~35% Complete**
+**Overall Progress: ~45% Complete**
 
-| Phase | Status | Completion | Components |
-|-------|--------|------------|------------|
-| Phase 1 | ✅ Complete | 100% | Database, Models, Factories |
-| Phase 2 | ✅ Complete | 100% | Services, Repositories |
-| Phase 3 | ✅ Complete | 100% | UI Components, Livewire, Documentation |
-| Phase 4 | ⏸️ Pending | 0% | Import & Reconciliation |
-| Phase 5 | ⏸️ Pending | 0% | Recurring & Projections |
-| Phase 6 | ⏸️ Pending | 0% | Reports & Analytics |
-| Phase 7 | ⏸️ Pending | 0% | Performance & Polish |
-| Phase 8 | ⏸️ Pending | 0% | Configuration & Commands |
+| Phase   | Status         | Completion | Components                             |
+|---------|----------------|------------|----------------------------------------|
+| Phase 1 | ✅ Complete     | 100%       | Database, Models, Factories            |
+| Phase 2 | ✅ Complete     | 100%       | Services, Repositories                 |
+| Phase 3 | ✅ Complete     | 100%       | UI Components, Livewire, Documentation |
+| Phase 4 | 🚧 In Progress | 65%        | Import & Reconciliation                |
+| Phase 5 | ⏸️ Pending     | 0%         | Recurring & Projections                |
+| Phase 6 | ⏸️ Pending     | 0%         | Reports & Analytics                    |
+| Phase 7 | ⏸️ Pending     | 0%         | Performance & Polish                   |
+| Phase 8 | ⏸️ Pending     | 0%         | Configuration & Commands               |
 
 ### Implemented Components
 
 #### ✅ Phase 3 Components (100% Complete)
+
 - **CalendarView** - Full calendar implementation with day/week/month/year views, navigation, balance calculations
 - **CalendarViewSimple** - Dashboard integration version
 - **TransactionForm** - Complete CRUD operations, category management, transfer support
 - **CategoryManager** - Hierarchical category management with rules system and auto-categorization
 
 #### ✅ Enhanced Infrastructure (Complete)
+
 - **Factories & Seeders** - RecurringPatternFactory, ImportFactory, comprehensive CategorySeeder with hierarchical data
-- **Testing Framework** - All 71 tests passing with comprehensive coverage
+- **Testing Framework** - All 65 tests passing with comprehensive coverage (513 assertions)
 - **Code Quality** - Laravel Pint compliance, consistent code style
 - **Component Documentation** - Complete developer guides for all components:
-  - `docs/components/CalendarView.md` - Calendar component usage and integration
-  - `docs/components/TransactionForm.md` - Transaction CRUD component guide
-  - `docs/components/CategoryManager.md` - Category management system guide
-  - `docs/components/EventSystem.md` - Inter-component communication patterns
+    - `docs/components/CalendarView.md` - Calendar component usage and integration
+    - `docs/components/TransactionForm.md` - Transaction CRUD component guide
+    - `docs/components/CategoryManager.md` - Category management system guide
+    - `docs/components/EventSystem.md` - Inter-component communication patterns
 
 #### ✅ Data & Testing Infrastructure
+
 - **Sample Data** - Realistic test data with 3 account types, 200+ transactions, recurring patterns
 - **Category Hierarchy** - 12 main categories with 50+ subcategories for comprehensive testing
 - **Factory Enhancement** - State methods for all factories (checking/savings/credit accounts, income/expense/transfer patterns)
 - **Database Integrity** - Fixed nullable constraints, proper relationships, migration compatibility
 
 #### ✅ Recent Improvements & Bug Fixes (August 2025)
+
 - **Dashboard UI Enhancement** - Month view now displays transaction amounts and descriptions instead of dots
 - **Transaction Modal Polish** - Button text correctly reflects Enter/Plan mode with proper type display
 - **Recurring Transaction Fix** - Resolved critical bug where only single occurrence was created instead of multiple
@@ -251,78 +282,91 @@ test('user model test', function () {
 - **Comprehensive Testing** - Added 14 new tests covering recurring transactions, balance calculations, and UI behavior
 - **Calendar View Improvements** - Enhanced current period defaults and navigation consistency
 
+#### 🚧 Phase 4 Components (65% Complete)
+
+- **ImportWizard** - File upload, column mapping, CSV processing with validation
+- **ImportService** - Core CSV processing logic with duplicate detection and auto-categorization
+- **DateParserFactory** - Locale-aware date parsing system supporting Australian and international formats
+- **ImportHistory** - Track and manage import status and history
+- **Critical Bug Fixes** - Fixed Carbon/CarbonImmutable type mismatch, missing Livewire methods
+- **Error Handling** - Comprehensive error documentation and logging system
+
 ## Development Task List
 
 ### Phase 1: Foundation & Database ✅
+
 1. **Database Schema Implementation**
-   - Create migrations for accounts, categories, transactions, recurring_patterns, imports, category_rules
-   - Implement nested set model for categories (_lft, _rgt columns)
-   - Add proper indexes for performance (date, category fields)
-   - Create database seeders with default categories
+    - Create migrations for accounts, categories, transactions, recurring_patterns, imports, category_rules
+    - Implement nested set model for categories (_lft, _rgt columns)
+    - Add proper indexes for performance (date, category fields)
+    - Create database seeders with default categories
 
 2. **Core Models & Relationships**
-   - `Account` model (checking, savings, credit types)
-   - `Category` model with nested set trait for hierarchy
-   - `Transaction` model with scopes for filtering
-   - `RecurringPattern` model for handling recurring logic
-   - `Import` model for CSV import tracking
-   - `CategoryRule` model for auto-categorization
+    - `Account` model (checking, savings, credit types)
+    - `Category` model with nested set trait for hierarchy
+    - `Transaction` model with scopes for filtering
+    - `RecurringPattern` model for handling recurring logic
+    - `Import` model for CSV import tracking
+    - `CategoryRule` model for auto-categorization
 
 3. **Model Factories & Testing Foundation**
-   - Create factories for all models with realistic test data
-   - Set up base test cases with RefreshDatabase
-   - Implement user scoping for multi-tenancy
+    - Create factories for all models with realistic test data
+    - Set up base test cases with RefreshDatabase
+    - Implement user scoping for multi-tenancy
 
 ### Phase 2: Core Services & Business Logic
+
 4. **Service Layer Implementation**
-   - `TransactionService` - CRUD operations and business rules
-   - `ProjectionService` - Calculate future balances and projections
-   - `RecurringService` - Generate recurring transactions
-   - `CategoryMatchingService` - Auto-categorization logic
-   - `ImportService` - Handle CSV processing and duplicate detection
+    - `TransactionService` - CRUD operations and business rules
+    - `ProjectionService` - Calculate future balances and projections
+    - `RecurringService` - Generate recurring transactions
+    - `CategoryMatchingService` - Auto-categorization logic
+    - `ImportService` - Handle CSV processing and duplicate detection
 
 5. **Repository Pattern**
-   - `TransactionRepository` - Optimized data access with eager loading
-   - `CategoryRepository` - Hierarchy queries and caching
-   - `RecurringRepository` - Pattern management and generation
+    - `TransactionRepository` - Optimized data access with eager loading
+    - `CategoryRepository` - Hierarchy queries and caching
+    - `RecurringRepository` - Pattern management and generation
 
 ### Phase 3: User Interface & Livewire Components ✅
+
 6. **Main Dashboard & Calendar View** ✅ **COMPLETE**
-   - ✅ `CalendarView` Livewire component (today, week, month, year views)
-   - ✅ Interactive navigation with period switching
-   - ✅ Running balance calculations and display
-   - ✅ Visual indicators (green/red for income/expense)
-   - ✅ Individual view templates for day/week/month/year
-   - ✅ Dashboard integration with `CalendarViewSimple`
-   - ✅ Account filtering and transaction display
-   - ✅ Integration with ProjectionService
+    - ✅ `CalendarView` Livewire component (today, week, month, year views)
+    - ✅ Interactive navigation with period switching
+    - ✅ Running balance calculations and display
+    - ✅ Visual indicators (green/red for income/expense)
+    - ✅ Individual view templates for day/week/month/year
+    - ✅ Dashboard integration with `CalendarViewSimple`
+    - ✅ Account filtering and transaction display
+    - ✅ Integration with ProjectionService
 
 7. **Transaction Management UI** ✅ **COMPLETE**
-   - ✅ `TransactionForm` component for add/edit operations
-   - ✅ Support for income, expense, and transfer transactions
-   - ✅ Date picker with past/present/future support
-   - ✅ Category selection with dynamic creation
-   - ✅ Modal-based interface with validation
-   - ✅ Transfer account selection and management
-   - ✅ Delete functionality and reconciliation support
-   - ⚠️ Bulk operations interface (future enhancement)
+    - ✅ `TransactionForm` component for add/edit operations
+    - ✅ Support for income, expense, and transfer transactions
+    - ✅ Date picker with past/present/future support
+    - ✅ Category selection with dynamic creation
+    - ✅ Modal-based interface with validation
+    - ✅ Transfer account selection and management
+    - ✅ Delete functionality and reconciliation support
+    - ⚠️ Bulk operations interface (future enhancement)
 
 8. **Category Management** ✅ **COMPLETE**
-   - ✅ `CategoryManager` component with hierarchical display
-   - ✅ Complete CRUD operations for categories
-   - ✅ Color and icon selection interface
-   - ✅ Category rules configuration interface
-   - ✅ Auto-categorization rule management
-   - ✅ Parent-child relationship management
-   - ✅ Visual hierarchy with indentation
-   - ✅ Transaction count and safety checks
+    - ✅ `CategoryManager` component with hierarchical display
+    - ✅ Complete CRUD operations for categories
+    - ✅ Color and icon selection interface
+    - ✅ Category rules configuration interface
+    - ✅ Auto-categorization rule management
+    - ✅ Parent-child relationship management
+    - ✅ Visual hierarchy with indentation
+    - ✅ Transaction count and safety checks
 
 ### Phase 4: Import & Reconciliation Features
+
 9. **CSV Import System**
-   - `ImportWizard` Livewire component
-   - File upload with validation
-   - Column mapping interface
-   - Preview and confirmation steps
+    - `ImportWizard` Livewire component
+    - File upload with validation
+    - Column mapping interface
+    - Preview and confirmation steps
 
 10. **Reconciliation Workflow**
     - Duplicate detection algorithms
@@ -331,6 +375,7 @@ test('user model test', function () {
     - Import history and status tracking
 
 ### Phase 5: Recurring Transactions & Projections
+
 11. **Recurring Transaction System**
     - Pattern configuration (daily, weekly, monthly, yearly, custom)
     - End date and occurrence skip functionality
@@ -344,6 +389,7 @@ test('user model test', function () {
     - Money in/out trend analysis
 
 ### Phase 6: Reporting & Advanced Features
+
 13. **Reports & Analytics Dashboard**
     - Category breakdown reports
     - Budget vs actual comparisons
@@ -357,6 +403,7 @@ test('user model test', function () {
     - Search and filtering capabilities
 
 ### Phase 7: Performance & Polish
+
 15. **Performance Optimization**
     - Implement caching for category hierarchy
     - Queue large CSV imports
@@ -370,6 +417,7 @@ test('user model test', function () {
     - Rate limiting for import operations
 
 ### Phase 8: Configuration & Artisan Commands
+
 17. **Application Configuration**
     - Create `config/budget.php` for app settings
     - Create `config/import.php` for CSV mappings
@@ -383,6 +431,7 @@ test('user model test', function () {
     - `budget:cleanup-imports` - Clean old import files
 
 ### Future Enhancements (Optional)
+
 19. **API Development**
     - RESTful API endpoints for mobile app
     - Sanctum authentication
@@ -394,51 +443,604 @@ test('user model test', function () {
     - Security vault for credentials
 
 ### Testing & Quality Assurance
+
 - Unit tests for all services and calculations
 - Feature tests for complete user workflows
 - Performance testing for calendar rendering
 - Security testing for file uploads and user inputs
 
-## Recent Session Summary (August 23, 2025)
+## Recent Session Summary (August 29, 2025)
 
-### Dashboard UI & Transaction Modal Updates - COMPLETED ✅
-Successfully completed all remaining items from the dashboard UI and transaction modal update plan:
+### Project Status Review & Critical Bug Fixes - COMPLETED ✅
+
+Successfully reviewed the current project status and resolved all critical issues identified:
 
 #### Issues Resolved:
-1. **Month View Display** - Fixed calendar month view to show transaction amounts and descriptions instead of colored dots
-2. **Transaction Button Text** - Verified and tested button text logic shows correct "Enter/Plan [Type]" based on status
-3. **Recurring Transactions** - Confirmed multiple occurrences are created correctly for frequencies like "every 2 weeks"
-4. **Calendar View Defaults** - Ensured all calendar views (day/week/month/year) default to current period
-5. **Balance Calculation Bug** - **CRITICAL FIX**: Planned transactions were incorrectly affecting account balances
+
+1. **Carbon/CarbonImmutable Type Mismatch** - Fixed ImportService.php:426 where `Carbon::instance()` was causing type conflicts
+2. **Code Style Compliance** - Fixed Pint formatting issue in LocaleAwareDateParsingTest.php
+3. **Missing Livewire Method** - Added `openTransactionForDay()` method to CalendarViewSimple component
+4. **Phase 4 Status Update** - Updated project documentation to reflect actual 65% completion of Import & Reconciliation
 
 #### Files Modified This Session:
-- `resources/views/livewire/calendar-view-simple.blade.php` - Enhanced month view transaction display
-- `tests/Feature/TransactionFormTest.php` - Added button text verification tests
-- `tests/Feature/RecurringTransactionTest.php` - **NEW FILE** - Comprehensive recurring transaction tests
-- `tests/Feature/CalendarViewTest.php` - Added calendar view default period tests
-- `tests/Feature/BalanceCalculationTest.php` - **NEW FILE** - Balance calculation tests and verification
-- `app/Models/Account.php` - Fixed getCurrentBalance() to exclude planned transactions
-- `app/Services/TransactionService.php` - Fixed getRunningBalance() to exclude planned transactions
+
+- `app/Services/ImportService.php` - Fixed Carbon type handling for transaction date processing
+- `tests/Feature/LocaleAwareDateParsingTest.php` - Fixed code style formatting
+- `app/Livewire/CalendarViewSimple.php` - Added missing method for transaction form integration
+- `CLAUDE.md` - Updated project status and documentation to reflect current state
 
 #### Test Results:
-- **71 tests passing** with 286 assertions (up from 64 tests)
-- **7 new balance calculation tests** verify planned transactions don't affect balances
-- **5 new recurring transaction tests** ensure multiple occurrences are created correctly
-- **6 new calendar view tests** confirm current period defaults work properly
-- **2 new transaction form tests** verify button text changes correctly
 
-#### Key Technical Achievement:
-**Planned vs Entered Transaction Separation**: Fixed critical logic flaw where planned transactions (future intentions) were affecting real account balances. Now only "entered" transactions impact balances, maintaining proper financial separation.
+- **65 tests passing** with 513 assertions
+- All critical runtime errors resolved
+- Import system now functional without type conflicts
+- Complete test suite validation confirmed
+
+#### Key Technical Achievements:
+
+1. **Type Safety Restoration** - Proper handling of CarbonInterface types throughout import pipeline
+2. **Import System Stability** - Phase 4 components now work without runtime errors
+3. **Documentation Accuracy** - Project status now accurately reflects 45% overall completion
 
 ### Current Application Status:
-- **All critical bugs resolved**
-- **Dashboard UI polished and functional**
-- **Transaction management working correctly**
-- **Balance calculations accurate**
-- **Comprehensive test coverage in place**
-- **Code style compliant with Laravel Pint**
 
-### Ready for Next Session:
-The application is in excellent working condition with robust testing coverage. All dashboard and transaction modal functionality is complete and thoroughly tested.
+- **All critical runtime errors resolved**
+- **Import & Reconciliation system functional**
+- **Phase 4 components working correctly**
+- **Test suite fully passing**
+- **Code quality standards maintained**
 
-- please confirm the application is working as expected before attempting to commit changes
+### Ready for Continued Development:
+
+The application is in excellent working condition with Phase 4 (Import & Reconciliation) now 65% complete and fully functional. Ready to continue with remaining
+Phase 4 features or advance to Phase 5.
+
+===
+
+`<laravel-boost-guidelines>`
+=== foundation rules ===
+
+# Laravel Boost Guidelines
+
+The Laravel Boost guidelines are specifically curated by Laravel maintainers for this application. These guidelines should be followed closely to enhance the
+user's satisfaction building Laravel applications.
+
+## Foundational Context
+
+This application is a Laravel application and its main Laravel ecosystems package & versions are below. You are an expert with them all. Ensure you abide by
+these specific packages & versions.
+
+- php - 8.4.12
+- laravel/framework (LARAVEL) - v12
+- laravel/prompts (PROMPTS) - v0
+- livewire/flux (FLUXUI_FREE) - v2
+- livewire/livewire (LIVEWIRE) - v3
+- laravel/pint (PINT) - v1
+- laravel/sail (SAIL) - v1
+- pestphp/pest (PEST) - v4
+- tailwindcss (TAILWINDCSS) - v4
+
+## Conventions
+
+- You must follow all existing code conventions used in this application. When creating or editing a file, check sibling files for the correct structure,
+  approach, naming.
+- Use descriptive names for variables and methods. For example, `isRegisteredForDiscounts`, not `discount()`.
+- Check for existing components to reuse before writing a new one.
+
+## Verification Scripts
+
+- Do not create verification scripts or tinker when tests cover that functionality and prove it works. Unit and feature tests are more important.
+
+## Application Structure & Architecture
+
+- Stick to existing directory structure - don't create new base folders without approval.
+- Do not change the application's dependencies without approval.
+
+## Frontend Bundling
+
+- If the user doesn't see a frontend change reflected in the UI, it could mean they need to run `npm run build`, `npm run dev`, or `composer run dev`. Ask them.
+
+## Replies
+
+- Be concise in your explanations - focus on what's important rather than explaining obvious details.
+
+## Documentation Files
+
+- You must only create documentation files if explicitly requested by the user.
+
+=== boost rules ===
+
+## Laravel Boost
+
+- Laravel Boost is an MCP server that comes with powerful tools designed specifically for this application. Use them.
+
+## Artisan
+
+- Use the `list-artisan-commands` tool when you need to call an Artisan command to double check the available parameters.
+
+## URLs
+
+- Whenever you share a project URL with the user you should use the `get-absolute-url` tool to ensure you're using the correct scheme, domain / IP, and port.
+
+## Tinker / Debugging
+
+- You should use the `tinker` tool when you need to execute PHP to debug code or query Eloquent models directly.
+- Use the `database-query` tool when you only need to read from the database.
+
+## Reading Browser Logs With the `browser-logs` Tool
+
+- You can read browser logs, errors, and exceptions using the `browser-logs` tool from Boost.
+- Only recent browser logs will be useful - ignore old logs.
+
+## Searching Documentation (Critically Important)
+
+- Boost comes with a powerful `search-docs` tool you should use before any other approaches. This tool automatically passes a list of installed packages and
+  their versions to the remote Boost API, so it returns only version-specific documentation specific for the user's circumstance. You should pass an array of
+  packages to filter on if you know you need docs for particular packages.
+- The 'search-docs' tool is perfect for all Laravel related packages, including Laravel, Inertia, Livewire, Filament, Tailwind, Pest, Nova, Nightwatch, etc.
+- You must use this tool to search for Laravel-ecosystem documentation before falling back to other approaches.
+- Search the documentation before making code changes to ensure we are taking the correct approach.
+- Use multiple, broad, simple, topic based queries to start. For example: `['rate limiting', 'routing rate limiting', 'routing']`.
+- Do not add package names to queries - package information is already shared. For example, use `test resource table`, not `filament 4 test resource table`.
+
+### Available Search Syntax
+
+- You can and should pass multiple queries at once. The most relevant results will be returned first.
+
+1. Simple Word Searches with auto-stemming - query=authentication - finds 'authenticate' and 'auth'
+2. Multiple Words (AND Logic) - query=rate limit - finds knowledge containing both "rate" AND "limit"
+3. Quoted Phrases (Exact Position) - query="infinite scroll" - Words must be adjacent and in that order
+4. Mixed Queries - query=middleware "rate limit" - "middleware" AND exact phrase "rate limit"
+5. Multiple Queries - queries=["authentication", "middleware"] - ANY of these terms
+
+=== php rules ===
+
+## PHP
+
+- Always use curly braces for control structures, even if it has one line.
+
+### Constructors
+
+- Use PHP 8 constructor property promotion in `__construct()`.
+    - `<code-snippet>public function __construct(public GitHub $github) { }</code-snippet>`
+- Do not allow empty `__construct()` methods with zero parameters.
+
+### Type Declarations
+
+- Always use explicit return type declarations for methods and functions.
+- Use appropriate PHP type hints for method parameters.
+
+```
+<code-snippet name="Explicit Return Types and Method Params" lang="php">
+protected function isAccessible(User $user, ?string $path = null): bool
+{
+    ...
+}
+</code-snippet>
+```
+
+## Comments
+
+- Prefer PHPDoc blocks over comments. Never use comments within the code itself unless there is something _very_ complex going on.
+
+## PHPDoc Blocks
+
+- Add useful array shape type definitions for arrays when appropriate.
+
+## Enums
+
+- Typically, keys in an Enum should be TitleCase. For example: `FavoritePerson`, `BestLake`, `Monthly`.
+
+=== laravel/core rules ===
+
+## Do Things the Laravel Way
+
+- Use `php artisan make:` commands to create new files (i.e. migrations, controllers, models, etc.). You can list available Artisan commands using the
+  `list-artisan-commands` tool.
+- If you're creating a generic PHP class, use `artisan make:class`.
+- Pass `--no-interaction` to all Artisan commands to ensure they work without user input. You should also pass the correct `--options` to ensure correct
+  behavior.
+
+### Database
+
+- Always use proper Eloquent relationship methods with return type hints. Prefer relationship methods over raw queries or manual joins.
+- Use Eloquent models and relationships before suggesting raw database queries
+- Avoid `DB::`; prefer `Model::query()`. Generate code that leverages Laravel's ORM capabilities rather than bypassing them.
+- Generate code that prevents N+1 query problems by using eager loading.
+- Use Laravel's query builder for very complex database operations.
+
+### Model Creation
+
+- When creating new models, create useful factories and seeders for them too. Ask the user if they need any other things, using `list-artisan-commands` to check
+  the available options to `php artisan make:model`.
+
+### APIs & Eloquent Resources
+
+- For APIs, default to using Eloquent API Resources and API versioning unless existing API routes do not, then you should follow existing application
+  convention.
+
+### Controllers & Validation
+
+- Always create Form Request classes for validation rather than inline validation in controllers. Include both validation rules and custom error messages.
+- Check sibling Form Requests to see if the application uses array or string based validation rules.
+
+### Queues
+
+- Use queued jobs for time-consuming operations with the `ShouldQueue` interface.
+
+### Authentication & Authorization
+
+- Use Laravel's built-in authentication and authorization features (gates, policies, Sanctum, etc.).
+
+### URL Generation
+
+- When generating links to other pages, prefer named routes and the `route()` function.
+
+### Configuration
+
+- Use environment variables only in configuration files - never use the `env()` function directly outside of config files. Always use `config('app.name')`, not
+  `env('APP_NAME')`.
+
+### Testing
+
+- When creating models for tests, use the factories for the models. Check if the factory has custom states that can be used before manually setting up the
+  model.
+- Faker: Use methods such as `$this->faker->word()` or `fake()->randomDigit()`. Follow existing conventions whether to use `$this->faker` or `fake()`.
+- When creating tests, make use of `php artisan make:test [options] <name>` to create a feature test, and pass `--unit` to create a unit test. Most tests should
+  be feature tests.
+
+### Vite Error
+
+- If you receive an "Illuminate\Foundation\ViteException: Unable to locate file in Vite manifest" error, you can run `npm run build` or ask the user to run
+  `npm run dev` or `composer run dev`.
+
+=== laravel/v12 rules ===
+
+## Laravel 12
+
+- Use the `search-docs` tool to get version specific documentation.
+- Since Laravel 11, Laravel has a new streamlined file structure which this project uses.
+
+### Laravel 12 Structure
+
+- No middleware files in `app/Http/Middleware/`.
+- `bootstrap/app.php` is the file to register middleware, exceptions, and routing files.
+- `bootstrap/providers.php` contains application specific service providers.
+- **No app\Console\Kernel.php** - use `bootstrap/app.php` or `routes/console.php` for console configuration.
+- **Commands auto-register** - files in `app/Console/Commands/` are automatically available and do not require manual registration.
+
+### Database
+
+- When modifying a column, the migration must include all of the attributes that were previously defined on the column. Otherwise, they will be dropped and
+  lost.
+- Laravel 11 allows limiting eagerly loaded records natively, without external packages: `$query->latest()->limit(10);`.
+
+### Models
+
+- Casts can and likely should be set in a `casts()` method on a model rather than the `$casts` property. Follow existing conventions from other models.
+
+=== fluxui-free/core rules ===
+
+## Flux UI Free
+
+- This project is using the free edition of Flux UI. It has full access to the free components and variants, but does not have access to the Pro components.
+- Flux UI is a component library for Livewire. Flux is a robust, hand-crafted, UI component library for your Livewire applications. It's built using Tailwind
+  CSS and provides a set of components that are easy to use and customize.
+- You should use Flux UI components when available.
+- Fallback to standard Blade components if Flux is unavailable.
+- If available, use Laravel Boost's `search-docs` tool to get the exact documentation and code snippets available for this project.
+- Flux UI components look like this:
+
+```
+<code-snippet name="Flux UI Component Usage Example" lang="blade">
+    <flux:button variant="primary"/>
+</code-snippet>
+```
+
+### Available Components
+
+This is correct as of Boost installation, but there may be additional components within the codebase.
+
+```
+<available-flux-components>
+avatar, badge, brand, breadcrumbs, button, callout, checkbox, dropdown, field, heading, icon, input, modal, navbar, profile, radio, select, separator, switch, text, textarea, tooltip
+</available-flux-components>
+```
+
+=== livewire/core rules ===
+
+## Livewire Core
+
+- Use the `search-docs` tool to find exact version specific documentation for how to write Livewire & Livewire tests.
+- Use the `php artisan make:livewire [Posts\\CreatePost]` artisan command to create new components
+- State should live on the server, with the UI reflecting it.
+- All Livewire requests hit the Laravel backend, they're like regular HTTP requests. Always validate form data, and run authorization checks in Livewire
+  actions.
+
+## Livewire Best Practices
+
+- Livewire components require a single root element.
+- Use `wire:loading` and `wire:dirty` for delightful loading states.
+- Add `wire:key` in loops:
+
+    ```blade
+    @foreach ($items as $item)
+        <div wire:key="item-{{ $item->id }}">
+            {{ $item->name }}
+        </div>
+    @endforeach
+    ```
+
+- Prefer lifecycle hooks like `mount()`, `updatedFoo()`) for initialization and reactive side effects:
+
+```
+<code-snippet name="Lifecycle hook examples" lang="php">
+    public function mount(User $user) { $this->user = $user; }
+    public function updatedSearch() { $this->resetPage(); }
+</code-snippet>
+```
+
+## Testing Livewire
+
+```
+<code-snippet name="Example Livewire component test" lang="php">
+    Livewire::test(Counter::class)
+        ->assertSet('count', 0)
+        ->call('increment')
+        ->assertSet('count', 1)
+        ->assertSee(1)
+        ->assertStatus(200);
+</code-snippet>
+```
+
+```
+<code-snippet name="Testing a Livewire component exists within a page" lang="php">
+    $this->get('/posts/create')
+    ->assertSeeLivewire(CreatePost::class);
+</code-snippet>
+```
+
+=== livewire/v3 rules ===
+
+## Livewire 3
+
+### Key Changes From Livewire 2
+
+- These things changed in Livewire 2, but may not have been updated in this application. Verify this application's setup to ensure you conform with application
+  conventions.
+    - Use `wire:model.live` for real-time updates, `wire:model` is now deferred by default.
+    - Components now use the `App\Livewire` namespace (not `App\Http\Livewire`).
+    - Use `$this->dispatch()` to dispatch events (not `emit` or `dispatchBrowserEvent`).
+    - Use the `components.layouts.app` view as the typical layout path (not `layouts.app`).
+
+### New Directives
+
+- `wire:show`, `wire:transition`, `wire:cloak`, `wire:offline`, `wire:target` are available for use. Use the documentation to find usage examples.
+
+### Alpine
+
+- Alpine is now included with Livewire, don't manually include Alpine.js.
+- Plugins included with Alpine: persist, intersect, collapse, and focus.
+
+### Lifecycle Hooks
+
+- You can listen for `livewire:init` to hook into Livewire initialization, and `fail.status === 419` for the page expiring:
+
+```
+<code-snippet name="livewire:load example" lang="js">
+document.addEventListener('livewire:init', function () {
+    Livewire.hook('request', ({ fail }) => {
+        if (fail && fail.status === 419) {
+            alert('Your session expired');
+        }
+    });
+
+    Livewire.hook('message.failed', (message, component) => {
+        console.error(message);
+    });
+
+});
+</code-snippet>
+```
+
+=== pint/core rules ===
+
+## Laravel Pint Code Formatter
+
+- You must run `vendor/bin/pint --dirty` before finalizing changes to ensure your code matches the project's expected style.
+- Do not run `vendor/bin/pint --test`, simply run `vendor/bin/pint` to fix any formatting issues.
+
+=== pest/core rules ===
+
+## Pest
+
+### Testing
+
+- If you need to verify a feature is working, write or update a Unit / Feature test.
+
+### Pest Tests
+
+- All tests must be written using Pest. Use `php artisan make:test --pest <name>`.
+- You must not remove any tests or test files from the tests directory without approval. These are not temporary or helper files - these are core to the
+  application.
+- Tests should test all of the happy paths, failure paths, and weird paths.
+- Tests live in the `tests/Feature` and `tests/Unit` directories.
+- Pest tests look and behave like this:
+
+```
+<code-snippet name="Basic Pest Test Example" lang="php">
+it('is true', function () {
+expect(true)->toBeTrue();
+});
+</code-snippet>
+```
+
+### Running Tests
+
+- Run the minimal number of tests using an appropriate filter before finalizing code edits.
+- To run all tests: `php artisan test`.
+- To run all tests in a file: `php artisan test tests/Feature/ExampleTest.php`.
+- To filter on a particular test name: `php artisan test --filter=testName` (recommended after making a change to a related file).
+- When the tests relating to your changes are passing, ask the user if they would like to run the entire test suite to ensure everything is still passing.
+
+### Pest Assertions
+
+- When asserting status codes on a response, use the specific method like `assertForbidden` and `assertNotFound` instead of using `assertStatus(403)` or
+  similar, e.g.:
+
+```
+<code-snippet name="Pest Example Asserting postJson Response" lang="php">
+it('returns all', function () {
+    $response = $this->postJson('/api/docs', []);
+    $response->assertSuccessful();
+});
+</code-snippet>
+```
+
+### Mocking
+
+- Mocking can be very helpful when appropriate.
+- When mocking, you can use the `Pest\Laravel\mock` Pest function, but always import it via `use function Pest\Laravel\mock;` before using it. Alternatively,
+  you can use `$this->mock()` if existing tests do.
+- You can also create partial mocks using the same import or self method.
+
+### Datasets
+
+- Use datasets in Pest to simplify tests which have a lot of duplicated data. This is often the case when testing validation rules, so consider going with this
+  solution when writing tests for validation rules.
+
+```
+<code-snippet name="Pest Dataset Example" lang="php">
+it('has emails', function (string $email) {
+    expect($email)->not->toBeEmpty();
+})->with([
+    'james' => 'james@laravel.com',
+    'taylor' => 'taylor@laravel.com',
+]);
+</code-snippet>
+```
+
+=== pest/v4 rules ===
+
+## Pest 4
+
+- Pest v4 is a huge upgrade to Pest and offers: browser testing, smoke testing, visual regression testing, test sharding, and faster type coverage.
+- Browser testing is incredibly powerful and useful for this project.
+- Browser tests should live in `tests/Browser/`.
+- Use the `search-docs` tool for detailed guidance on utilizing these features.
+
+### Browser Testing
+
+- You can use Laravel features like `Event::fake()`, `assertAuthenticated()`, and model factories within Pest v4 browser tests, as well as `RefreshDatabase` (
+  when needed) to ensure a clean state for each test.
+- Interact with the page (click, type, scroll, select, submit, drag-and-drop, touch gestures, etc.) when appropriate to complete the test.
+- If requested, test on multiple browsers (Chrome, Firefox, Safari).
+- If requested, test on different devices and viewports (like iPhone 14 Pro, tablets, or custom breakpoints).
+- Switch color schemes (light/dark mode) when appropriate.
+- Take screenshots or pause tests for debugging when appropriate.
+
+### Example Tests
+
+```
+<code-snippet name="Pest Browser Test Example" lang="php">
+it('may reset the password', function () {
+    Notification::fake();
+
+    $this->actingAs(User::factory()->create());
+
+    $page = visit('/sign-in'); // Visit on a real browser...
+
+    $page->assertSee('Sign In')
+        ->assertNoJavascriptErrors() // or ->assertNoConsoleLogs()
+        ->click('Forgot Password?')
+        ->fill('email', 'nuno@laravel.com')
+        ->click('Send Reset Link')
+        ->assertSee('We have emailed your password reset link!')
+
+    Notification::assertSent(ResetPassword::class);
+
+});
+</code-snippet>
+```
+
+```
+<code-snippet name="Pest Smoke Testing Example" lang="php">
+$pages = visit(['/', '/about', '/contact']);
+
+$pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
+</code-snippet>
+```
+
+=== tailwindcss/core rules ===
+
+## Tailwind Core
+
+- Use Tailwind CSS classes to style HTML, check and use existing tailwind conventions within the project before writing your own.
+- Offer to extract repeated patterns into components that match the project's conventions (i.e. Blade, JSX, Vue, etc..)
+- Think through class placement, order, priority, and defaults - remove redundant classes, add classes to parent or child carefully to limit repetition, group
+  elements logically
+- You can use the `search-docs` tool to get exact examples from the official documentation when needed.
+
+### Spacing
+
+- When listing items, use gap utilities for spacing, don't use margins.
+
+```
+<code-snippet name="Valid Flex Gap Spacing Example" lang="html">
+    <div class="flex gap-8">
+        <div>Superior</div>
+        <div>Michigan</div>
+        <div>Erie</div>
+    </div>
+</code-snippet>
+```
+
+### Dark Mode
+
+- If existing pages and components support dark mode, new pages and components must support dark mode in a similar way, typically using `dark:`.
+
+=== tailwindcss/v4 rules ===
+
+## Tailwind 4
+
+- Always use Tailwind CSS v4 - do not use the deprecated utilities.
+- `corePlugins` is not supported in Tailwind v4.
+- In Tailwind v4, you import Tailwind using a regular CSS `@import` statement, not using the `@tailwind` directives used in v3:
+
+```
+<code-snippet name="Tailwind v4 Import Tailwind Diff" lang="diff"
+
+- @tailwind base;
+- @tailwind components;
+- @tailwind utilities;
+
++ @import "tailwindcss";
+</code-snippet>
+```
+
+### Replaced Utilities
+
+- Tailwind v4 removed deprecated utilities. Do not use the deprecated option - use the replacement.
+- Opacity values are still numeric.
+
+| Deprecated | Replacement |
+|------------+--------------|
+| bg-opacity-* | bg-black/* |
+| text-opacity-* | text-black/* |
+| border-opacity-* | border-black/* |
+| divide-opacity-* | divide-black/* |
+| ring-opacity-* | ring-black/* |
+| placeholder-opacity-* | placeholder-black/* |
+| flex-shrink-* | shrink-* |
+| flex-grow-* | grow-* |
+| overflow-ellipsis | text-ellipsis |
+| decoration-slice | box-decoration-slice |
+| decoration-clone | box-decoration-clone |
+
+=== tests rules ===
+
+## Test Enforcement
+
+- Every change must be programmatically tested. Write a new test or update an existing test, then run the affected tests to make sure they pass.
+- Run the minimum number of tests needed to ensure code quality and speed. Use `php artisan test` with a specific filename or filter.
+  </laravel-boost-guidelines>
