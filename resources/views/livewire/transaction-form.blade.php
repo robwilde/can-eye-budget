@@ -123,18 +123,60 @@
 
                     {{-- Category Selection --}}
                     <div class="mb-6">
-                        <input 
-                            type="text"
-                            placeholder="Category / Subcategory"
-                            class="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-                            readonly
-                        >
-                        <select wire:model="category_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm mt-2">
-                            <option value="">No Category</option>
-                            @foreach($this->flatCategories as $category)
-                                <option value="{{ $category->id }}">{{ $category->name }}</option>
-                            @endforeach
-                        </select>
+                        <label class="block text-gray-600 dark:text-gray-400 text-sm mb-2">
+                            Category / Subcategory:
+                        </label>
+                        
+                        {{-- Search Input --}}
+                        <div class="relative">
+                            <input 
+                                type="text"
+                                wire:model.live="categorySearch"
+                                placeholder="Type to search categories..."
+                                class="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-10 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            >
+                            @if($category_id)
+                                <button 
+                                    type="button" 
+                                    wire:click="clearCategory"
+                                    class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                                >
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                    </svg>
+                                </button>
+                            @endif
+                        </div>
+
+                        {{-- Selected Category Display --}}
+                        @if($category_id && !$categorySearch)
+                            @php
+                                $selectedCategory = $this->flatCategories->where('id', $category_id)->first();
+                            @endphp
+                            @if($selectedCategory)
+                                <div class="mt-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-2 rounded-lg">
+                                    Selected: {{ str_replace(' > ', ' / ', $selectedCategory->full_name) }}
+                                </div>
+                            @endif
+                        @endif
+
+                        {{-- Search Results --}}
+                        @if($categorySearch)
+                            <div class="mt-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 max-h-60 overflow-y-auto">
+                                @forelse($this->filteredCategories as $category)
+                                    <div 
+                                        wire:click="selectCategory({{ $category->id }})"
+                                        class="px-3 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer border-b border-gray-100 dark:border-gray-600 last:border-b-0 {{ $category_id == $category->id ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400' : '' }}"
+                                    >
+                                        {{ str_replace(' > ', ' / ', $category->full_name) }}
+                                    </div>
+                                @empty
+                                    <div class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400 italic">
+                                        No categories found matching "{{ $categorySearch }}"
+                                    </div>
+                                @endforelse
+                            </div>
+                        @endif
                         @if(!$showCategoryForm)
                             <button 
                                 type="button" 
