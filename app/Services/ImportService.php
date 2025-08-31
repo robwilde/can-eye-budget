@@ -55,6 +55,9 @@ final class ImportService
         ]);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function processImport(Import $import, Account $account, array $columnMapping): ImportResultData
     {
         $import->update(['status' => 'processing']);
@@ -146,7 +149,7 @@ final class ImportService
         return $this->detectDuplicates($account, $csvData);
     }
 
-    public function resolveHiplicates(Import $import, array $resolutions): int
+    public function resolveDuplicates(Import $import, array $resolutions): int
     {
         $resolvedCount = 0;
 
@@ -197,9 +200,9 @@ final class ImportService
         $csvData = collect();
 
         if (($handle = fopen($path, 'rb')) !== false) {
-            $headers = fgetcsv($handle);
+            $headers = fgetcsv($handle, 0, ',', '"');
 
-            while (($row = fgetcsv($handle)) !== false) {
+            while (($row = fgetcsv($handle, 0, ',', '"')) !== false) {
                 if (count($row) === count($headers)) {
                     $csvData->push(array_combine($headers, $row));
                 }
