@@ -152,7 +152,7 @@ test('import wizard can be reset', function () {
         ->set('currentStep', 'mapping')
         ->call('startOver')
         ->assertSet('currentStep', 'upload')
-        ->assertSet('selectedAccountId', 0)
+        ->assertSet('selectedAccountId', '')
         ->assertSet('csvFile', null);
 });
 
