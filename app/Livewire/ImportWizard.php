@@ -24,7 +24,7 @@ final class ImportWizard extends Component
 
     public array $steps = ['upload', 'mapping', 'preview', 'confirm', 'results'];
 
-    public int $selectedAccountId = 0;
+    public string $selectedAccountId = '';
 
     #[Validate('required|file|mimes:csv,txt|max:10240')] // 10MB max
     public ?UploadedFile $csvFile = null;
@@ -60,7 +60,7 @@ final class ImportWizard extends Component
     public function resetWizard(): void
     {
         $this->currentStep = 'upload';
-        $this->selectedAccountId = 0;
+        $this->selectedAccountId = '';
         $this->csvFile = null;
         $this->csvHeaders = [];
         $this->columnMapping = [];
@@ -196,7 +196,7 @@ final class ImportWizard extends Component
 
     public function getSelectedAccountProperty(): ?Account
     {
-        return $this->selectedAccountId > 0 ? Account::find($this->selectedAccountId) : null;
+        return $this->selectedAccountId !== '' ? Account::find($this->selectedAccountId) : null;
     }
 
     public function getAvailableColumnsProperty(): array
@@ -231,7 +231,7 @@ final class ImportWizard extends Component
         $headers = [];
 
         if (($handle = fopen($path, 'rb')) !== false) {
-            $headers = fgetcsv($handle) ?: [];
+            $headers = fgetcsv($handle, 0, ',', '"', '\\') ?: [];
             fclose($handle);
         }
 

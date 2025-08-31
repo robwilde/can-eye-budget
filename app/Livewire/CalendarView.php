@@ -151,6 +151,18 @@ final class CalendarView extends Component
         $this->dispatch('open-transaction-form-for-date', $date);
     }
 
+    public function selectDate(string $date): void
+    {
+        $this->currentDate = Carbon::parse($date);
+        $this->setView('day');
+    }
+
+    public function selectMonth(string $date): void
+    {
+        $this->currentDate = Carbon::parse($date);
+        $this->setView('month');
+    }
+
     public function render(): View
     {
         return view('livewire.calendar-view');
