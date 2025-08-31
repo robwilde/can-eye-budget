@@ -55,6 +55,8 @@ final class TransactionForm extends Component
 
     public string $newCategoryColor = '#3b82f6';
 
+    public string $categorySearch = '';
+
     private TransactionService $transactionService;
 
     public function boot(TransactionService $transactionService): void
@@ -135,6 +137,26 @@ final class TransactionForm extends Component
             ->sortBy('name');
     }
 
+    #[Computed]
+    public function filteredCategories()
+    {
+        $categories = auth()
+            ->user()
+            ->categories()
+            ->get();
+
+        // Filter by search term if provided
+        if ($this->categorySearch) {
+            $searchTerm = mb_strtolower(mb_trim($this->categorySearch));
+            $categories = $categories->filter(function ($category) use ($searchTerm) {
+                return str_contains(mb_strtolower($category->full_name), $searchTerm);
+            });
+        }
+
+        // Sort by full name for better hierarchy display
+        return $categories->sortBy('full_name');
+    }
+
     public function open(?Transaction $transaction = null): void
     {
         if ($transaction) {
@@ -154,7 +176,7 @@ final class TransactionForm extends Component
     public function close(): void
     {
         $this->isOpen = false;
-        $this->reset(['showCategoryForm', 'newCategoryName', 'newCategoryParentId', 'newCategoryColor']);
+        $this->reset(['showCategoryForm', 'newCategoryName', 'newCategoryParentId', 'newCategoryColor', 'categorySearch']);
     }
 
     public function save(): void
@@ -299,6 +321,18 @@ final class TransactionForm extends Component
         } catch (Exception $e) {
             $this->addError('newCategoryName', 'An error occurred while creating the category: '.$e->getMessage());
         }
+    }
+
+    public function selectCategory(int $categoryId): void
+    {
+        $this->category_id = $categoryId;
+        $this->categorySearch = '';
+    }
+
+    public function clearCategory(): void
+    {
+        $this->category_id = null;
+        $this->categorySearch = '';
     }
 
     public function updatedType(): void
