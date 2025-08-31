@@ -13,7 +13,8 @@
         <div>
             <flux:field>
                 <flux:label for="account">Select Account *</flux:label>
-                <flux:select wire:model.live="selectedAccountId" placeholder="Choose an account...">
+                <flux:select wire:model.live="selectedAccountId">
+                    <option value="">Choose an account...</option>
                     @foreach($this->user_accounts as $account)
                         <option value="{{ $account->id }}">
                             {{ $account->name }} ({{ $account->type }})
@@ -93,7 +94,7 @@
         <flux:button 
             variant="primary" 
             wire:click="processUpload" 
-            :disabled="!$csvFile || !$selectedAccountId"
+            :disabled="!$csvFile || $selectedAccountId === ''"
             wire:loading.attr="disabled"
             wire:target="processUpload">
             

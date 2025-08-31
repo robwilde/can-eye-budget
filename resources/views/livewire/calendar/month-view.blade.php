@@ -41,7 +41,7 @@
                 
                 <div 
                     class="bg-white dark:bg-gray-800 p-2 min-h-[120px] {{ !$isCurrentMonth ? 'opacity-50' : '' }} {{ $isToday ? 'ring-2 ring-blue-500' : '' }} hover:bg-gray-50 dark:hover:bg-gray-750 transition-colors cursor-pointer"
-                    wire:click="setView('day'); $set('currentDate', '{{ $day->toDateString() }}')"
+                    wire:click="selectDate('{{ $day->toDateString() }}')"
                 >
                     {{-- Day Number --}}
                     <div class="flex items-center justify-between mb-2">

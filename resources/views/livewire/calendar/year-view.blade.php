@@ -45,7 +45,7 @@
             
             <div 
                 class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer {{ $isCurrentMonth ? 'ring-2 ring-blue-500' : '' }}"
-                wire:click="setView('month'); $set('currentDate', '{{ $monthDate->toDateString() }}')"
+                wire:click="selectMonth('{{ $monthDate->toDateString() }}')"
             >
                 {{-- Month Header --}}
                 <div class="text-center mb-3">
