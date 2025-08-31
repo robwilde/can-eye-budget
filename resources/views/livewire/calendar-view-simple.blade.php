@@ -120,7 +120,11 @@
                         $hasTransactions = $dayTransactions->isNotEmpty();
                     @endphp
                     
-                    <div class="min-h-24 border border-gray-200 dark:border-gray-600 rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors {{ $currentDate->isToday() ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' : '' }}">
+                    <div 
+                        wire:click="openTransactionForDay('{{ $dayDate }}')"
+                        class="min-h-24 border border-gray-200 dark:border-gray-600 rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer {{ $currentDate->isToday() ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' : '' }}"
+                        title="Click to add new transaction"
+                    >
                         <div 
                             wire:click.stop="selectDate('{{ $dayDate }}')"
                             class="text-sm font-medium text-gray-900 dark:text-white hover:font-bold hover:text-base cursor-pointer inline-block mb-1 transition-all"
@@ -130,11 +134,7 @@
                         </div>
                         
                         {{-- Transaction indicators --}}
-                        <div 
-                            wire:click="openTransactionForDay('{{ $dayDate }}')"
-                            class="space-y-1 mt-1 cursor-pointer"
-                            title="Click to add new transaction"
-                        >
+                        <div class="space-y-1 mt-1">
                             @foreach($dayTransactions->take(3) as $transaction)
                                 @php
                                     $isIncome = $transaction->type === 'income';
@@ -201,9 +201,12 @@
                             $isToday = $currentDate->isToday();
                         @endphp
                         
-                        <div class="min-h-20 border border-gray-200 dark:border-gray-600 rounded p-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors
+                        <div 
+                            wire:click="openTransactionForDay('{{ $dayDate }}')"
+                            class="min-h-20 border border-gray-200 dark:border-gray-600 rounded p-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer
                                 {{ !$isCurrentMonth ? 'bg-gray-50 dark:bg-gray-700 text-gray-400' : '' }}
                                 {{ $isToday ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' : '' }}"
+                            title="Click to add new transaction"
                         >
                             <div 
                                 wire:click.stop="selectDate('{{ $dayDate }}')"
@@ -214,11 +217,7 @@
                             </div>
                             
                             {{-- Transaction indicators for month view (compact) --}}
-                            <div 
-                                wire:click="openTransactionForDay('{{ $dayDate }}')"
-                                class="mt-1 space-y-0.5 cursor-pointer"
-                                title="Click to add new transaction"
-                            >
+                            <div class="mt-1 space-y-0.5">
                                 @foreach($dayTransactions->take(2) as $transaction)
                                     @php
                                         $isIncome = $transaction->type === 'income';
