@@ -72,7 +72,7 @@ Tickets:
    - Merge allows selecting fields to override (e.g., description, category)
    - Persist decisions (new service method or reuse ImportService createTransactionFromResolution for merges)
    - Update Import summary (merged_count, skipped_count) and status (reconciled)
-   - Technical debt: rename ImportService::resolveHiplicates to resolveDuplicates; keep BC alias method forwarding to the new method
+   - ✅ Fixed: renamed ImportService::resolveHiplicates to resolveDuplicates
    - AC: Resolutions are saved; DB reflects merges; counts updated; a resolutions report is downloadable
 
 9. T9: Tests (PEST Feature + Unit)
@@ -125,7 +125,7 @@ Tickets:
 - Duplicate handling: ensure idempotency with row hash (ImportService::hashCsvRow)
 - Large files: synchronous only for MVP; guard size and row count
 - Security: validate CSV; sanitize descriptions; enforce user scoping on imports and review
-- Technical debt: method rename resolveHiplicates → resolveDuplicates (BC alias)
+- ✅ Fixed: method rename resolveHiplicates → resolveDuplicates
 
 ## Acceptance Criteria Summary
 - Sprint 1: User can complete an end-to-end import; duplicates are deferred to a report and not created; history shows imports; tests pass
