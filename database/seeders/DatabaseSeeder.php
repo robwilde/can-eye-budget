@@ -16,6 +16,7 @@ final class DatabaseSeeder extends Seeder
         $this->call([
             DefaultUserSeeder::class,
             DefaultAccountCategoriesSeeder::class,
+            CategorySeeder::class,
             AccountSeeder::class,
         ]);
     }
