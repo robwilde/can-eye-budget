@@ -81,7 +81,7 @@
                         <div class="flex gap-1 mt-2 flex-wrap">
                             @foreach($dayTransactions->take(3) as $transaction)
                                 <div 
-                                    class="w-2 h-2 rounded-full {{ $transaction->type === 'income' ? 'bg-green-500' : ($transaction->type === 'transfer' ? 'bg-blue-500' : 'bg-red-500') }}"
+                                    class="w-2 h-2 rounded-full {{ $transaction->type === 'income' ? 'bg-green-500' : ($transaction->type === 'transfer' ? 'bg-orange-500' : 'bg-red-500') }}"
                                     title="{{ $transaction->description }}"
                                 ></div>
                             @endforeach

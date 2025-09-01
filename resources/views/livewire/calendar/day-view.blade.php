@@ -50,13 +50,15 @@
                         @php
                             $isIncome = $transaction->type === 'income';
                             $isTransfer = $transaction->type === 'transfer';
+                            $isTransferSource = $isTransfer && $transaction->isTransferSource();
+                            $isTransferDestination = $isTransfer && $transaction->isTransferDestination();
                         @endphp
                         
                         <div class="flex items-center justify-between p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg hover:shadow-sm transition-shadow cursor-pointer"
                              wire:click="openTransactionForm({{ $transaction->id }})">
                             <div class="flex items-center gap-3">
                                 {{-- Type Indicator --}}
-                                <div class="w-3 h-3 rounded-full {{ $isIncome ? 'bg-green-500' : ($isTransfer ? 'bg-blue-500' : 'bg-red-500') }}"></div>
+                                <div class="w-3 h-3 rounded-full {{ $isIncome ? 'bg-green-500' : ($isTransfer ? 'bg-orange-500' : 'bg-red-500') }}"></div>
                                 
                                 <div>
                                     <p class="font-medium text-gray-900 dark:text-white">
@@ -81,8 +83,8 @@
                             </div>
 
                             <div class="text-right">
-                                <p class="font-semibold {{ $isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400' }}">
-                                    {{ $isIncome ? '+' : '-' }}${{ number_format($transaction->amount, 2) }}
+                                <p class="font-semibold {{ $isIncome ? 'text-green-600 dark:text-green-400' : ($isTransfer ? 'text-orange-600 dark:text-orange-400' : 'text-red-600 dark:text-red-400') }}">
+                                    {{ $isIncome || $isTransferDestination ? '+' : ($isTransferSource ? '-' : '-') }}${{ number_format($transaction->amount, 2) }}
                                 </p>
                                 <p class="text-xs text-gray-500 dark:text-gray-400">
                                     {{ $transaction->transaction_date->format('g:i A') }}
