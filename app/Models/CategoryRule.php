@@ -15,6 +15,7 @@ final class CategoryRule extends Model
 
     protected $fillable = [
         'category_id',
+        'account_id',
         'field',
         'operator',
         'value',
@@ -30,12 +31,32 @@ final class CategoryRule extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
+    }
+
     /**
      * Scope to order by priority (highest first)
      */
     public function scopeByPriority(Builder $query): Builder
     {
         return $query->orderBy('priority', 'desc');
+    }
+
+    /**
+     * Scope to filter by account
+     */
+    public function scopeForAccount(Builder $query, ?int $accountId = null): Builder
+    {
+        if ($accountId === null) {
+            return $query->whereNull('account_id');
+        }
+
+        return $query->where(function ($q) use ($accountId) {
+            $q->where('account_id', $accountId)
+              ->orWhereNull('account_id');
+        });
     }
 
     public function matches(string $description, float $amount): bool
