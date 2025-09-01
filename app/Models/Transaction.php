@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -22,6 +23,7 @@ final class Transaction extends Model
         'transaction_date',
         'category_id',
         'transfer_to_account_id',
+        'transfer_pair_id',
         'recurring_pattern_id',
         'import_id',
         'reconciled',
@@ -94,12 +96,12 @@ final class Transaction extends Model
         return $query->where('status', 'entered');
     }
 
-    public function scopeForDateRange($query, $startDate, $endDate)
+    public function scopeForDateRange($query, $startDate, $endDate): Builder
     {
         return $query->whereBetween('transaction_date', [$startDate, $endDate]);
     }
 
-    public function scopeForMonth($query, $year, $month)
+    public function scopeForMonth($query, $year, $month): Builder
     {
         $startDate = Carbon::createFromDate($year, $month, 1)->startOfMonth();
         $endDate = $startDate->copy()->endOfMonth();
@@ -110,10 +112,9 @@ final class Transaction extends Model
     public function getSignedAmountAttribute(): float
     {
         return match ($this->type) {
-            'income'   => (float) $this->amount,
-            'expense'  => -(float) $this->amount,
-            'transfer' => -(float) $this->amount,
-            default    => 0
+            'income' => (float) $this->amount,
+            'expense', 'transfer' => -(float) $this->amount,
+            default => 0
         };
     }
 
@@ -135,5 +136,35 @@ final class Transaction extends Model
     public function isEntered(): bool
     {
         return $this->status === 'entered';
+    }
+
+    public function transferPairTransaction(): ?self
+    {
+        if (! $this->transfer_pair_id) {
+            return null;
+        }
+
+        return self::where('transfer_pair_id', $this->transfer_pair_id)
+                   ->where('id', '!=', $this->id)
+                   ->first();
+    }
+
+    public function isTransferSource(): bool
+    {
+        return $this->isTransfer() && ! is_null($this->transfer_to_account_id);
+    }
+
+    public function isTransferDestination(): bool
+    {
+        return $this->isTransfer() && is_null($this->transfer_to_account_id) && ! is_null($this->transfer_pair_id);
+    }
+
+    public function getTransferDisplayType(): string
+    {
+        if (! $this->isTransfer()) {
+            return $this->type;
+        }
+
+        return $this->isTransferSource() ? 'transfer_out' : 'transfer_in';
     }
 }
