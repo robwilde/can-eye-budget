@@ -1,20 +1,27 @@
 <?php
 
+/** @noinspection PhpUnused */
+
 declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Data\CategorySuggestionData;
+use App\Data\DescriptionGroupData;
+use App\Data\SuggestedRuleData;
+use App\Data\TransactionAnalysisData;
 use App\Models\Category;
 use App\Models\CategoryRule;
 use App\Models\User;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Spatie\LaravelData\DataCollection;
 
 final class CategoryMatchingService
 {
-    public function findMatchingCategory(User $user, string $description, float $amount): ?Category
+    public function findMatchingCategory(User $user, string $description, float $amount, ?int $accountId = null): ?Category
     {
-        $rules = $this->getCachedRules($user);
+        $rules = $this->getCachedRules($user, $accountId);
 
         foreach ($rules as $rule) {
             if ($rule->matches($description, $amount)) {
@@ -25,29 +32,32 @@ final class CategoryMatchingService
         return null;
     }
 
-    public function suggestCategories(User $user, string $description, float $amount, int $limit = 5): Collection
+    public function suggestCategories(User $user, string $description, float $amount, ?int $accountId = null, int $limit = 5): DataCollection
     {
-        $rules = $this->getCachedRules($user);
+        $rules = $this->getCachedRules($user, $accountId);
         $suggestions = collect();
 
         // Find exact matches first
         foreach ($rules as $rule) {
             if ($rule->matches($description, $amount)) {
-                $suggestions->push([
+                $suggestions->push(CategorySuggestionData::from([
                     'category'   => $rule->category,
                     'confidence' => $this->calculateConfidence($rule, $description, $amount),
                     'reason'     => $this->getMatchReason($rule),
-                ]);
+                ]));
             }
         }
 
         // Add fuzzy matches if we don't have enough suggestions
         if ($suggestions->count() < $limit) {
-            $fuzzyMatches = $this->getFuzzyMatches($user, $description, $amount, $limit - $suggestions->count());
+            $fuzzyMatches = $this->getFuzzyMatches($user, $description, $amount, $accountId, $limit - $suggestions->count());
             $suggestions = $suggestions->merge($fuzzyMatches);
         }
 
-        return $suggestions->sortByDesc('confidence')->take($limit)->values();
+        return CategorySuggestionData::collect(
+            $suggestions->sortByDesc('confidence')->take($limit)->values(),
+            DataCollection::class,
+        );
     }
 
     public function learnFromTransaction(User $user, string $description, float $amount, Category $category): void
@@ -58,10 +68,10 @@ final class CategoryMatchingService
         foreach ($keywords as $keyword) {
             // Check if a similar rule already exists
             $existingRule = CategoryRule::where('category_id', $category->id)
-                ->where('field', 'description')
-                ->where('operator', 'contains')
-                ->where('value', $keyword)
-                ->first();
+                                        ->where('field', 'description')
+                                        ->where('operator', 'contains')
+                                        ->where('value', $keyword)
+                                        ->first();
 
             if (! $existingRule) {
                 CategoryRule::create([
@@ -69,7 +79,7 @@ final class CategoryMatchingService
                     'field'       => 'description',
                     'operator'    => 'contains',
                     'value'       => $keyword,
-                    'priority'    => $this->calculatePriority($keyword, $description),
+                    'priority'    => $this->calculatePriority($keyword),
                 ]);
             }
         }
@@ -77,10 +87,10 @@ final class CategoryMatchingService
         // Create amount-based rules for round numbers
         if ($this->isRoundAmount($amount)) {
             $existingAmountRule = CategoryRule::where('category_id', $category->id)
-                ->where('field', 'amount')
-                ->where('operator', 'equals')
-                ->where('value', (string) $amount)
-                ->first();
+                                              ->where('field', 'amount')
+                                              ->where('operator', 'equals')
+                                              ->where('value', (string) $amount)
+                                              ->first();
 
             if (! $existingAmountRule) {
                 CategoryRule::create([
@@ -97,17 +107,11 @@ final class CategoryMatchingService
         $this->clearRulesCache($user);
     }
 
-    public function analyzeTransactionPatterns(User $user): array
+    public function analyzeTransactionPatterns(User $user): TransactionAnalysisData
     {
-        $analysis = [
-            'uncategorized_count'            => 0,
-            'auto_categorized_count'         => 0,
-            'top_uncategorized_descriptions' => [],
-            'suggested_rules'                => [],
-        ];
-
         // Get recent uncategorized transactions
-        $uncategorizedTransactions = $user->accounts()
+        $uncategorizedTransactions = $user
+            ->accounts()
             ->with('transactions')
             ->get()
             ->pluck('transactions')
@@ -115,7 +119,10 @@ final class CategoryMatchingService
             ->whereNull('category_id')
             ->take(100);
 
-        $analysis['uncategorized_count'] = $uncategorizedTransactions->count();
+        $uncategorizedCount = $uncategorizedTransactions->count();
+
+        // TODO: Implement auto-categorized count calculation
+        $autoCategorizedCount = 0;
 
         // Group by similar descriptions
         $descriptionGroups = $uncategorizedTransactions
@@ -130,28 +137,36 @@ final class CategoryMatchingService
             })
             ->take(10);
 
+        $topDescriptions = collect();
+        $suggestedRules = collect();
+
         foreach ($descriptionGroups as $normalizedDesc => $transactions) {
-            $analysis['top_uncategorized_descriptions'][] = [
+            $topDescriptions->push(DescriptionGroupData::from([
                 'description'         => $normalizedDesc,
                 'count'               => $transactions->count(),
                 'total_amount'        => $transactions->sum('amount'),
                 'sample_transactions' => $transactions->take(3)->values(),
-            ];
+            ]));
 
             // Suggest rules based on patterns
             $keywords = $this->extractKeywords($normalizedDesc);
             foreach ($keywords as $keyword) {
-                $analysis['suggested_rules'][] = [
+                $suggestedRules->push(SuggestedRuleData::from([
                     'field'              => 'description',
                     'operator'           => 'contains',
                     'value'              => $keyword,
                     'frequency'          => $transactions->count(),
                     'suggested_category' => null, // User will need to set this
-                ];
+                ]));
             }
         }
 
-        return $analysis;
+        return TransactionAnalysisData::from([
+            'uncategorized_count'            => $uncategorizedCount,
+            'auto_categorized_count'         => $autoCategorizedCount,
+            'top_uncategorized_descriptions' => DescriptionGroupData::collect($topDescriptions, DataCollection::class),
+            'suggested_rules'                => SuggestedRuleData::collect($suggestedRules, DataCollection::class),
+        ]);
     }
 
     public function createRulesFromSuggestions(array $suggestions): Collection
@@ -175,26 +190,41 @@ final class CategoryMatchingService
         return $createdRules;
     }
 
-    private function getCachedRules(User $user): Collection
+    private function getCachedRules(User $user, ?int $accountId = null): Collection
     {
-        $cacheKey = "category_rules_user_{$user->id}";
+        $cacheKey = "category_rules_user_$user->id";
+        if ($accountId !== null) {
+            $cacheKey .= "_account_$accountId";
+        }
 
-        return Cache::remember($cacheKey, 3600, function () use ($user) {
-            return CategoryRule::whereHas('category', function ($query) use ($user) {
+        return Cache::remember($cacheKey, 3600, static function () use ($user, $accountId) {
+            return CategoryRule::whereHas('category', static function ($query) use ($user) {
                 $query->where('user_id', $user->id);
             })
-                ->with('category')
-                ->byPriority()
-                ->get();
+                               ->forAccount($accountId)
+                               ->with(['category', 'account'])
+                               ->byPriority()
+                               ->get();
         });
     }
 
-    private function clearRulesCache(User $user): void
+    private function clearRulesCache(User $user, ?int $accountId = null): void
     {
-        Cache::forget("category_rules_user_{$user->id}");
+        if ($accountId !== null) {
+            Cache::forget("category_rules_user_{$user->id}_account_$accountId");
+        } else {
+            // Clear global rules cache for this user
+            Cache::forget("category_rules_user_$user->id");
+
+            // Note: For full wildcard clearing, we'd need Redis-specific implementation
+            // For now, we clear the most common cache keys manually
+            $user->accounts()->pluck('id')->each(function ($accountId) use ($user) {
+                Cache::forget("category_rules_user_{$user->id}_account_$accountId");
+            });
+        }
     }
 
-    private function getFuzzyMatches(User $user, string $description, float $amount, int $limit): Collection
+    private function getFuzzyMatches(User $user, string $description, float $amount, ?int $accountId, int $limit): Collection
     {
         $categories = $user->categories()->get();
         $fuzzyMatches = collect();
@@ -203,11 +233,11 @@ final class CategoryMatchingService
             $similarity = $this->calculateSimilarity($description, $category->name);
 
             if ($similarity > 0.3) { // 30% similarity threshold
-                $fuzzyMatches->push([
+                $fuzzyMatches->push(CategorySuggestionData::from([
                     'category'   => $category,
                     'confidence' => $similarity * 0.5, // Lower confidence for fuzzy matches
-                    'reason'     => "Similar to category name: {$category->name}",
-                ]);
+                    'reason'     => "Similar to category name: $category->name",
+                ]));
             }
         }
 
@@ -241,13 +271,13 @@ final class CategoryMatchingService
     private function getMatchReason(CategoryRule $rule): string
     {
         return match ($rule->operator) {
-            'equals'       => "Exact match for {$rule->field}: '{$rule->value}'",
-            'contains'     => "Contains '{$rule->value}' in {$rule->field}",
-            'starts_with'  => "{$rule->field} starts with '{$rule->value}'",
-            'ends_with'    => "{$rule->field} ends with '{$rule->value}'",
-            'greater_than' => "{$rule->field} is greater than {$rule->value}",
-            'less_than'    => "{$rule->field} is less than {$rule->value}",
-            default        => "Matches rule for {$rule->field}"
+            'equals'       => "Exact match for $rule->field: '$rule->value'",
+            'contains'     => "Contains '$rule->value' in $rule->field",
+            'starts_with'  => "$rule->field starts with '$rule->value'",
+            'ends_with'    => "$rule->field ends with '$rule->value'",
+            'greater_than' => "$rule->field is greater than $rule->value",
+            'less_than'    => "$rule->field is less than $rule->value",
+            default        => "Matches rule for $rule->field"
         };
     }
 
@@ -262,7 +292,7 @@ final class CategoryMatchingService
 
         foreach ($words as $word) {
             // Skip common words and very short words
-            if (mb_strlen($word) >= 3 && ! in_array(mb_strtolower($word), $this->getStopWords())) {
+            if (mb_strlen($word) >= 3 && ! in_array(mb_strtolower($word), $this->getStopWords(), true)) {
                 $keywords[] = $word;
             }
         }
@@ -289,10 +319,9 @@ final class CategoryMatchingService
         return mb_trim(preg_replace('/\s+/', ' ', mb_strtolower($normalized)));
     }
 
-    private function calculatePriority(string $keyword, string $fullDescription): int
+    private function calculatePriority(string $keyword): int
     {
         $keywordLength = mb_strlen($keyword);
-        $descriptionLength = mb_strlen($fullDescription);
 
         // Longer keywords get higher priority (lower number)
         if ($keywordLength >= 8) {
