@@ -8,14 +8,22 @@ namespace App\Services;
 
 use App\Data\CategorySuggestionData;
 use App\Data\DescriptionGroupData;
+use App\Data\RuleConflictData;
+use App\Data\RuleTestResultData;
 use App\Data\SuggestedRuleData;
 use App\Data\TransactionAnalysisData;
+use App\Data\TransactionChangeData;
 use App\Models\Category;
 use App\Models\CategoryRule;
+use App\Models\Transaction;
 use App\Models\User;
+use Exception;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Spatie\LaravelData\DataCollection;
+use Throwable;
 
 final class CategoryMatchingService
 {
@@ -190,6 +198,218 @@ final class CategoryMatchingService
         return $createdRules;
     }
 
+    /**
+     * Test a rule against recent transactions to see what it would match
+     */
+    public function testRule(CategoryRule $rule, int $limit = 50): RuleTestResultData
+    {
+        $cacheKey = "rule_test_{$rule->id}_$limit";
+
+        return Cache::remember($cacheKey, 300, function () use ($rule, $limit) {
+            try {
+                // Get recent transactions that would match this rule
+                $query = Transaction::with(['category', 'account'])
+                                    ->orderBy('transaction_date', 'desc')
+                                    ->limit($limit);
+
+                // Apply account filter if rule is account-specific
+                if ($rule->account_id) {
+                    $query->where('account_id', $rule->account_id);
+                }
+
+                $recentTransactions = $query->get();
+                $matchingTransactions = collect();
+
+                foreach ($recentTransactions as $transaction) {
+                    if ($rule->matches($transaction->description, (float) $transaction->amount)) {
+                        $matchingTransactions->push($transaction);
+                    }
+                }
+
+                // Check for conflicts with other rules
+                $conflicts = $this->findRuleConflicts($rule, $matchingTransactions);
+
+                // Create transaction change data
+                $transactionChanges = $matchingTransactions->map(function (Transaction $transaction) use ($rule) {
+                    return TransactionChangeData::from([
+                        'transaction_id'    => $transaction->id,
+                        'description'       => $transaction->description,
+                        'amount'            => (float) $transaction->amount,
+                        'date'              => $transaction->transaction_date,
+                        'current_category'  => $transaction->category?->name,
+                        'proposed_category' => $rule->category->name,
+                        'account_name'      => $transaction->account->name,
+                        'confidence'        => $this->calculateConfidence($rule, $transaction->description, (float) $transaction->amount),
+                        'match_reason'      => $this->getMatchReason($rule),
+                    ]);
+                });
+
+                return new RuleTestResultData(
+                    totalMatches             : $matchingTransactions->count(),
+                    totalAmount              : $matchingTransactions->sum('amount'),
+                    uncategorizedMatches     : $matchingTransactions->whereNull('category_id')->count(),
+                    alreadyCategorizedMatches: $matchingTransactions->whereNotNull('category_id')->count(),
+                    transactions             : TransactionChangeData::collect($transactionChanges, DataCollection::class),
+                    conflicts                : RuleConflictData::collect(collect($conflicts), DataCollection::class),
+                );
+            } catch (Exception $e) {
+                Log::error('Error testing rule', [
+                    'rule_id' => $rule->id,
+                    'error'   => $e->getMessage(),
+                ]);
+
+                return new RuleTestResultData(
+                    totalMatches             : 0,
+                    totalAmount              : 0.0,
+                    uncategorizedMatches     : 0,
+                    alreadyCategorizedMatches: 0,
+                    transactions             : TransactionChangeData::collect(collect(), DataCollection::class),
+                    conflicts                : RuleConflictData::collect(collect(), DataCollection::class),
+                    error                    : 'Error testing rule: '.$e->getMessage(),
+                );
+            }
+        });
+    }
+
+    /**
+     * Test multiple rules together to see their combined effect
+     */
+    public function testMultipleRules(Collection $rules): Collection
+    {
+        return $rules->map(function (CategoryRule $rule) {
+            return [
+                'rule'    => $rule,
+                'results' => $this->testRule($rule),
+            ];
+        });
+    }
+
+    /**
+     * Find rules that might conflict with the given rule
+     */
+    public function getConflictingRules(CategoryRule $rule): Collection
+    {
+        $existingRules = CategoryRule::whereHas('category', static function ($query) use ($rule) {
+            $query->where('user_id', $rule->category->user_id);
+        })
+                                     ->where('id', '!=', $rule->id)
+                                     ->with(['category'])
+                                     ->get();
+
+        $conflicts = collect();
+
+        foreach ($existingRules as $existingRule) {
+            $conflictType = $this->detectConflictType($rule, $existingRule);
+
+            if ($conflictType) {
+                $conflicts->push(RuleConflictData::fromRules($rule, $existingRule, $conflictType));
+            }
+        }
+
+        return $conflicts;
+    }
+
+    /**
+     * Apply rules to existing transactions in bulk
+     *
+     * @throws Throwable
+     */
+    public function applyRulesToTransactions(User $user, array $ruleIds = [], int $limit = 100): array
+    {
+        $results = [
+            'processed'      => 0,
+            'categorized'    => 0,
+            'recategorized'  => 0,
+            'errors'         => 0,
+            'error_messages' => [],
+        ];
+
+        try {
+            DB::beginTransaction();
+
+            // Get rules to apply
+            $rules = empty($ruleIds)
+                ? $this->getAllUserRules($user)
+                : CategoryRule::whereIn('id', $ruleIds)->with(['category'])->byPriority()->get();
+
+            // Get uncategorized or specified transactions
+            $query = Transaction::whereHas('account', static function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+            })
+                                ->with(['category', 'account'])
+                                ->orderBy('transaction_date', 'desc')
+                                ->limit($limit);
+
+            if (empty($ruleIds)) {
+                // Apply to uncategorized transactions only
+                $query->whereNull('category_id');
+            }
+
+            $transactions = $query->get();
+
+            foreach ($transactions as $transaction) {
+                $results['processed']++;
+
+                // Find the first matching rule
+                $matchingRule = null;
+                foreach ($rules as $rule) {
+                    // Skip if rule is account-specific and doesn't match
+                    if ($rule->account_id && $rule->account_id !== $transaction->account_id) {
+                        continue;
+                    }
+
+                    if ($rule->matches($transaction->description, (float) $transaction->amount)) {
+                        $matchingRule = $rule;
+                        break;
+                    }
+                }
+
+                if ($matchingRule) {
+                    $wasAlreadyCategorized = $transaction->category_id !== null;
+
+                    // Apply the rule
+                    $transaction->applyRule($matchingRule);
+
+                    if ($wasAlreadyCategorized) {
+                        $results['recategorized']++;
+                    } else {
+                        $results['categorized']++;
+                    }
+                }
+            }
+
+            DB::commit();
+        } catch (Exception $e) {
+            DB::rollBack();
+            Log::error('Error applying rules to transactions', [
+                'user_id' => $user->id,
+                'error'   => $e->getMessage(),
+            ]);
+
+            $results['errors']++;
+            $results['error_messages'][] = $e->getMessage();
+        }
+
+        return $results;
+    }
+
+    /**
+     * Get all rules for a user (for bulk operations)
+     */
+    private function getAllUserRules(User $user): Collection
+    {
+        $cacheKey = "all_category_rules_user_$user->id";
+
+        return Cache::remember($cacheKey, 3600, static function () use ($user) {
+            return CategoryRule::whereHas('category', static function ($query) use ($user) {
+                $query->where('user_id', $user->id);
+            })
+                               ->with(['category', 'account'])
+                               ->byPriority()
+                               ->get();
+        });
+    }
+
     private function getCachedRules(User $user, ?int $accountId = null): Collection
     {
         $cacheKey = "category_rules_user_$user->id";
@@ -358,5 +578,144 @@ final class CategoryMatchingService
             'purchase', 'payment', 'transaction', 'debit', 'credit', 'card',
             'pos', 'withdrawal', 'deposit', 'transfer', 'fee', 'charge',
         ];
+    }
+
+    /**
+     * Find conflicts between rules for specific transactions
+     */
+    private function findRuleConflicts(CategoryRule $rule, Collection $transactions): array
+    {
+        if ($transactions->isEmpty()) {
+            return [];
+        }
+
+        // Get other rules that could also match these transactions
+        $otherRules = CategoryRule::whereHas('category', static function ($query) use ($rule) {
+            $query->where('user_id', $rule->category->user_id);
+        })
+                                  ->where('id', '!=', $rule->id)
+                                  ->with(['category'])
+                                  ->get();
+
+        $conflicts = [];
+
+        foreach ($otherRules as $otherRule) {
+            $conflictingTransactionCount = 0;
+
+            foreach ($transactions as $transaction) {
+                if ($otherRule->matches($transaction->description, (float) $transaction->amount)) {
+                    $conflictingTransactionCount++;
+                }
+            }
+
+            if ($conflictingTransactionCount > 0) {
+                $conflictType = $this->detectConflictType($rule, $otherRule);
+                if ($conflictType) {
+                    $conflicts[] = RuleConflictData::fromRules($rule, $otherRule, $conflictType, $conflictingTransactionCount);
+                }
+            }
+        }
+
+        return $conflicts;
+    }
+
+    /**
+     * Detect the type of conflict between two rules
+     */
+    private function detectConflictType(CategoryRule $rule1, CategoryRule $rule2): ?string
+    {
+        // Exact match conflict
+        if ($rule1->field === $rule2->field &&
+            $rule1->operator === $rule2->operator &&
+            mb_strtolower($rule1->value) === mb_strtolower($rule2->value)) {
+            return 'exact_match';
+        }
+
+        // Category conflict (same category, different conditions)
+        if ($rule1->category_id === $rule2->category_id) {
+            return 'category_conflict';
+        }
+
+        // Overlapping conditions
+        if ($rule1->field === $rule2->field && $this->conditionsOverlap($rule1, $rule2)) {
+            return 'overlapping_conditions';
+        }
+
+        // Similar patterns
+        if ($rule1->field === 'description' && $rule2->field === 'description' &&
+            $this->calculateSimilarity($rule1->value, $rule2->value) > 0.8) {
+            return 'similar_patterns';
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if two rule conditions overlap
+     */
+    private function conditionsOverlap(CategoryRule $rule1, CategoryRule $rule2): bool
+    {
+        // For description rules
+        if ($rule1->field === 'description') {
+            return $this->descriptionConditionsOverlap($rule1, $rule2);
+        }
+
+        // For amount rules
+        if ($rule1->field === 'amount') {
+            return $this->amountConditionsOverlap($rule1, $rule2);
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if description conditions overlap
+     */
+    private function descriptionConditionsOverlap(CategoryRule $rule1, CategoryRule $rule2): bool
+    {
+        $value1 = mb_strtolower($rule1->value);
+        $value2 = mb_strtolower($rule2->value);
+
+        // Contains overlap
+        if (($rule1->operator === 'contains' && str_contains($value2, $value1)) ||
+            ($rule2->operator === 'contains' && str_contains($value1, $value2))) {
+            return true;
+        }
+
+        // Starts with overlap
+        if (($rule1->operator === 'starts_with' && str_starts_with($value2, $value1)) ||
+            ($rule2->operator === 'starts_with' && str_starts_with($value1, $value2))) {
+            return true;
+        }
+
+        // Ends with overlap
+        if (($rule1->operator === 'ends_with' && str_ends_with($value2, $value1)) ||
+            ($rule2->operator === 'ends_with' && str_ends_with($value1, $value2))) {
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Check if amount conditions overlap
+     */
+    private function amountConditionsOverlap(CategoryRule $rule1, CategoryRule $rule2): bool
+    {
+        $amount1 = (float) $rule1->value;
+        $amount2 = (float) $rule2->value;
+
+        // Same amount with different operators can overlap
+        if (abs($amount1 - $amount2) < 0.01) {
+            return true;
+        }
+
+        // Range overlaps (greater_than and less_than)
+        if (($rule1->operator === 'greater_than' && $rule2->operator === 'less_than' && $amount1 < $amount2) ||
+            ($rule2->operator === 'greater_than' && $rule1->operator === 'less_than' && $amount2 < $amount1)) {
+            return true;
+        }
+
+        return false;
     }
 }
