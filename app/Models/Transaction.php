@@ -30,12 +30,15 @@ final class Transaction extends Model
         'import_id',
         'reconciled',
         'status',
+        'applied_rule_id',
+        'auto_categorized_at',
     ];
 
     protected $casts = [
-        'amount'           => 'decimal:2',
-        'transaction_date' => 'date',
-        'reconciled'       => 'boolean',
+        'amount'              => 'decimal:2',
+        'transaction_date'    => 'date',
+        'reconciled'          => 'boolean',
+        'auto_categorized_at' => 'datetime',
     ];
 
     public function account(): BelongsTo
@@ -61,6 +64,11 @@ final class Transaction extends Model
     public function import(): BelongsTo
     {
         return $this->belongsTo(Import::class);
+    }
+
+    public function appliedRule(): BelongsTo
+    {
+        return $this->belongsTo(CategoryRule::class, 'applied_rule_id');
     }
 
     public function scopeIncome($query)
@@ -172,14 +180,15 @@ final class Transaction extends Model
 
     public function scopeUniqueDescriptions(Builder $query, ?int $accountId = null): Builder
     {
-        $query = $query->select('description')
-                       ->selectRaw('COUNT(*) as usage_count')
-                       ->whereNotNull('description')
-                       ->where('description', '!=', '')
-                       ->whereRaw('TRIM(description) != ""')
-                       ->groupBy('description')
-                       ->orderByDesc('usage_count')
-                       ->orderBy('description');
+        $query = $query
+            ->select('description')
+            ->selectRaw('COUNT(*) as usage_count')
+            ->whereNotNull('description')
+            ->where('description', '!=', '')
+            ->whereRaw('TRIM(description) != ""')
+            ->groupBy('description')
+            ->orderByDesc('usage_count')
+            ->orderBy('description');
 
         if ($accountId) {
             $query->where('account_id', $accountId);
@@ -196,34 +205,84 @@ final class Transaction extends Model
             return $query->whereRaw('1 = 0'); // Return empty result for empty search
         }
 
-        $query = $query->select('description')
-                       ->selectRaw('COUNT(*) as usage_count')
-                       ->selectRaw('CASE
+        $query = $query
+            ->select('description')
+            ->selectRaw('COUNT(*) as usage_count')
+            ->selectRaw('CASE
                            WHEN LOWER(description) = LOWER(?) THEN 4
                            WHEN LOWER(description) LIKE LOWER(?) THEN 3
                            WHEN LOWER(description) LIKE LOWER(?) THEN 2
                            ELSE 1
                        END as relevance_score', [
-                           $term,
-                           $term.'%',
-                           '%'.$term.'%',
-                       ])
-                       ->whereNotNull('description')
-                       ->where('description', '!=', '')
-                       ->whereRaw('TRIM(description) != ""')
-                       ->where(function ($q) use ($term) {
-                           $q->where('description', 'LIKE', '%'.$term.'%');
-                       })
-                       ->groupBy('description')
-                       ->orderByDesc('relevance_score')
-                       ->orderByDesc('usage_count')
-                       ->orderBy('description')
-                       ->limit(10);
+                $term,
+                $term.'%',
+                '%'.$term.'%',
+            ])
+            ->whereNotNull('description')
+            ->where('description', '!=', '')
+            ->whereRaw('TRIM(description) != ""')
+            ->where(function ($q) use ($term) {
+                $q->where('description', 'LIKE', '%'.$term.'%');
+            })
+            ->groupBy('description')
+            ->orderByDesc('relevance_score')
+            ->orderByDesc('usage_count')
+            ->orderBy('description')
+            ->limit(10);
 
         if ($accountId) {
             $query->where('account_id', $accountId);
         }
 
         return $query;
+    }
+
+    /**
+     * Scope to get transactions that were automatically categorized
+     */
+    public function scopeAutoCategorized(Builder $query): Builder
+    {
+        return $query->whereNotNull('applied_rule_id');
+    }
+
+    /**
+     * Scope to get transactions that were manually categorized
+     */
+    public function scopeManuallyCategorized(Builder $query): Builder
+    {
+        return $query
+            ->whereNotNull('category_id')
+            ->whereNull('applied_rule_id');
+    }
+
+    /**
+     * Check if this transaction was automatically categorized
+     */
+    public function isAutoCategorized(): bool
+    {
+        return ! is_null($this->applied_rule_id);
+    }
+
+    /**
+     * Apply a rule to this transaction (set category and track the rule)
+     */
+    public function applyRule(CategoryRule $rule): bool
+    {
+        return $this->update([
+            'category_id'         => $rule->category_id,
+            'applied_rule_id'     => $rule->id,
+            'auto_categorized_at' => now(),
+        ]);
+    }
+
+    /**
+     * Remove automatic categorization (keep category but remove rule tracking)
+     */
+    public function removeRuleApplication(): bool
+    {
+        return $this->update([
+            'applied_rule_id'     => null,
+            'auto_categorized_at' => null,
+        ]);
     }
 }

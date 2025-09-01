@@ -1,5 +1,7 @@
 <?php
 
+/** @noinspection PhpUnused */
+
 declare(strict_types=1);
 
 namespace App\Models;
@@ -54,8 +56,9 @@ final class CategoryRule extends Model
         }
 
         return $query->where(function ($q) use ($accountId) {
-            $q->where('account_id', $accountId)
-              ->orWhereNull('account_id');
+            $q
+                ->where('account_id', $accountId)
+                ->orWhereNull('account_id');
         });
     }
 
@@ -72,5 +75,22 @@ final class CategoryRule extends Model
             'less_than'    => is_numeric($testValue) && (float) $testValue < (float) $this->value,
             default        => false
         };
+    }
+
+    public function getDisplayName(): string
+    {
+        $operator = match ($this->operator) {
+            'contains'     => 'contains',
+            'equals'       => 'equals',
+            'starts_with'  => 'starts with',
+            'ends_with'    => 'ends with',
+            'greater_than' => '>',
+            'less_than'    => '<',
+            default        => $this->operator
+        };
+
+        $fieldName = $this->field === 'description' ? 'Description' : 'Amount';
+
+        return "$fieldName $operator '$this->value'";
     }
 }
