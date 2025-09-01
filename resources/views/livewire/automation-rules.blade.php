@@ -91,12 +91,82 @@
                             />
                             <flux:description>Enter the amount to compare against</flux:description>
                         @else
-                            <flux:input 
-                                wire:model="value" 
-                                id="value"
-                                placeholder="e.g., Starbucks, AMZN, grocery"
-                            />
-                            <flux:description>Text to match in transaction descriptions</flux:description>
+                            <div class="relative" 
+                                 x-data="{
+                                     showSuggestions: @entangle('showDescriptionSuggestions'),
+                                     selectedIndex: @entangle('selectedSuggestionIndex'),
+                                     suggestions: @entangle('descriptionSearchResults'),
+                                     
+                                     handleKeydown(event) {
+                                         if (!this.showSuggestions || this.suggestions.length === 0) {
+                                             return;
+                                         }
+                                         
+                                         switch(event.key) {
+                                             case 'ArrowDown':
+                                                 event.preventDefault();
+                                                 $wire.navigateDescriptionSuggestions('down');
+                                                 break;
+                                             case 'ArrowUp':
+                                                 event.preventDefault();
+                                                 $wire.navigateDescriptionSuggestions('up');
+                                                 break;
+                                             case 'Enter':
+                                                 if (this.selectedIndex >= 0) {
+                                                     event.preventDefault();
+                                                     $wire.selectCurrentSuggestion();
+                                                 }
+                                                 break;
+                                             case 'Escape':
+                                                 event.preventDefault();
+                                                 $wire.hideDescriptionSuggestions();
+                                                 break;
+                                         }
+                                     }
+                                 }"
+                                 @click.outside="$wire.hideDescriptionSuggestions()"
+                            >
+                                <flux:input 
+                                    wire:model.live.debounce.300ms="value" 
+                                    id="value"
+                                    placeholder="e.g., Starbucks, AMZN, grocery"
+                                    autocomplete="off"
+                                    @keydown="handleKeydown"
+                                    @focus="if ($wire.value.length >= 2) $wire.searchDescriptions()"
+                                />
+                                
+                                <!-- Suggestions Dropdown -->
+                                <div x-show="showSuggestions && suggestions.length > 0" 
+                                     x-transition:enter="transition ease-out duration-100"
+                                     x-transition:enter-start="transform opacity-0 scale-95"
+                                     x-transition:enter-end="transform opacity-100 scale-100"
+                                     x-transition:leave="transition ease-in duration-75"
+                                     x-transition:leave-start="transform opacity-100 scale-100"
+                                     x-transition:leave-end="transform opacity-0 scale-95"
+                                     class="absolute z-10 w-full mt-1 bg-white dark:bg-zinc-800 shadow-lg rounded-md border border-zinc-200 dark:border-zinc-700 max-h-60 overflow-auto"
+                                     style="display: none;">
+                                    <template x-for="(suggestion, index) in suggestions" :key="index">
+                                        <div class="p-3 hover:bg-zinc-50 dark:hover:bg-zinc-700 cursor-pointer border-b border-zinc-100 dark:border-zinc-700 last:border-b-0"
+                                             :class="{ 'bg-blue-50 dark:bg-blue-900/20': selectedIndex === index }"
+                                             @click="$wire.selectDescriptionSuggestion(index)"
+                                             @mouseenter="selectedIndex = index">
+                                            <div class="flex justify-between items-center">
+                                                <div class="flex-1 min-w-0">
+                                                    <p class="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate" 
+                                                       x-text="suggestion.description"></p>
+                                                </div>
+                                                <div class="ml-2 flex-shrink-0">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-zinc-100 dark:bg-zinc-600 text-zinc-800 dark:text-zinc-200">
+                                                        <span x-text="suggestion.usage_count"></span>
+                                                        <span class="ml-1">uses</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </template>
+                                </div>
+                            </div>
+                            <flux:description>Start typing to see suggestions from your transaction history</flux:description>
                         @endif
                         <flux:error name="value" />
                     </flux:field>
