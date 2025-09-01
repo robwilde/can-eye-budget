@@ -7,9 +7,11 @@ namespace App\Livewire;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\CategoryRule;
+use App\Models\Transaction;
 use Exception;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
@@ -42,6 +44,13 @@ final class AutomationRules extends Component
 
     // UI state
     public bool $showForm = false;
+
+    // Description search properties
+    public array $descriptionSearchResults = [];
+
+    public bool $showDescriptionSuggestions = false;
+
+    public int $selectedSuggestionIndex = -1;
 
     public function mount(): void
     {
@@ -206,6 +215,86 @@ final class AutomationRules extends Component
         // Reset operator when field changes
         $operators = $this->fieldOperators();
         $this->operator = array_key_first($operators) ?? 'contains';
+
+        // Hide suggestions when field changes
+        $this->showDescriptionSuggestions = false;
+        $this->selectedSuggestionIndex = -1;
+    }
+
+    public function updatedValue(): void
+    {
+        // Trigger search when value changes
+        if ($this->field === 'description' && mb_strlen($this->value) >= 2) {
+            $this->searchDescriptions();
+        } else {
+            $this->showDescriptionSuggestions = false;
+            $this->selectedSuggestionIndex = -1;
+        }
+    }
+
+    public function searchDescriptions(): void
+    {
+        if ($this->field !== 'description' || mb_strlen($this->value) < 2) {
+            $this->descriptionSearchResults = [];
+            $this->showDescriptionSuggestions = false;
+
+            return;
+        }
+
+        $cacheKey = 'description_search:'.md5($this->value.'|'.$this->accountId);
+
+        $this->descriptionSearchResults = Cache::remember($cacheKey, now()->addMinutes(5), function () {
+            return Transaction::descriptionSearch($this->value, $this->accountId)
+                              ->get()
+                              ->map(function ($result) {
+                                  return [
+                                      'description'     => $result->description,
+                                      'usage_count'     => $result->usage_count,
+                                      'relevance_score' => $result->relevance_score,
+                                  ];
+                              })
+                              ->toArray();
+        });
+
+        $this->showDescriptionSuggestions = count($this->descriptionSearchResults) > 0;
+        $this->selectedSuggestionIndex = -1;
+    }
+
+    public function selectDescriptionSuggestion(int $index): void
+    {
+        if (isset($this->descriptionSearchResults[$index])) {
+            $this->value = $this->descriptionSearchResults[$index]['description'];
+            $this->showDescriptionSuggestions = false;
+            $this->selectedSuggestionIndex = -1;
+        }
+    }
+
+    public function hideDescriptionSuggestions(): void
+    {
+        $this->showDescriptionSuggestions = false;
+        $this->selectedSuggestionIndex = -1;
+    }
+
+    public function navigateDescriptionSuggestions(string $direction): void
+    {
+        $maxIndex = count($this->descriptionSearchResults) - 1;
+
+        if ($direction === 'down') {
+            $this->selectedSuggestionIndex = $this->selectedSuggestionIndex < $maxIndex
+                ? $this->selectedSuggestionIndex + 1
+                : 0;
+        } elseif ($direction === 'up') {
+            $this->selectedSuggestionIndex = $this->selectedSuggestionIndex > 0
+                ? $this->selectedSuggestionIndex - 1
+                : $maxIndex;
+        }
+    }
+
+    public function selectCurrentSuggestion(): void
+    {
+        if ($this->selectedSuggestionIndex >= 0 && isset($this->descriptionSearchResults[$this->selectedSuggestionIndex])) {
+            $this->selectDescriptionSuggestion($this->selectedSuggestionIndex);
+        }
     }
 
     public function render(): View
@@ -223,6 +312,9 @@ final class AutomationRules extends Component
         $this->operator = 'contains';
         $this->value = '';
         $this->priority = 10;
+        $this->descriptionSearchResults = [];
+        $this->showDescriptionSuggestions = false;
+        $this->selectedSuggestionIndex = -1;
         $this->resetErrorBag();
     }
 }
