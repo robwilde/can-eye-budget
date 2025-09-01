@@ -1,4 +1,5 @@
 <?php
+
 /** @noinspection PhpUnused */
 
 declare(strict_types=1);
@@ -175,6 +176,7 @@ final class Transaction extends Model
                        ->selectRaw('COUNT(*) as usage_count')
                        ->whereNotNull('description')
                        ->where('description', '!=', '')
+                       ->whereRaw('TRIM(description) != ""')
                        ->groupBy('description')
                        ->orderByDesc('usage_count')
                        ->orderBy('description');
@@ -208,6 +210,7 @@ final class Transaction extends Model
                        ])
                        ->whereNotNull('description')
                        ->where('description', '!=', '')
+                       ->whereRaw('TRIM(description) != ""')
                        ->where(function ($q) use ($term) {
                            $q->where('description', 'LIKE', '%'.$term.'%');
                        })
