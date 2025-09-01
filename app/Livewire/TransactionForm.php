@@ -81,11 +81,14 @@ final class TransactionForm extends Component
             $this->transfer_to_account_id = $transaction->transfer_to_account_id;
             $this->reconciled = (bool) ($transaction->reconciled ?? false);
         } else {
-            // Set default account for new transactions
-            $this->account_id = auth()
-                ->user()
-                ->accounts()
-                ->first()?->id;
+            // Explicitly ensure no default account is selected for new transactions
+            $this->account_id = null;
+            $this->type = 'expense';
+            $this->amount = null;
+            $this->description = '';
+            $this->category_id = null;
+            $this->transfer_to_account_id = null;
+            $this->reconciled = false;
         }
     }
 
@@ -165,10 +168,9 @@ final class TransactionForm extends Component
             $this->reset(['account_id', 'type', 'amount', 'description', 'category_id', 'transfer_to_account_id', 'reconciled']);
             $this->transaction_date = Carbon::now()
                                             ->format('Y-m-d');
-            $this->account_id = auth()
-                ->user()
-                ->accounts()
-                ->first()?->id;
+            // Explicitly set to null to ensure "Select account" shows
+            $this->account_id = null;
+            $this->type = 'expense';
         }
         $this->isOpen = true;
     }
