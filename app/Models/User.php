@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 
 final class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
     /**
@@ -44,15 +44,15 @@ final class User extends Authenticatable
     public function initials(): string
     {
         return Str::of($this->name)
-            ->explode(' ')
-            ->take(2)
-            ->map(fn ($word) => Str::substr($word, 0, 1))
-            ->implode('');
+                  ->explode(' ')
+                  ->take(2)
+                  ->map(fn ($word) => Str::substr($word, 0, 1))
+                  ->implode('');
     }
 
     public function accounts(): HasMany
     {
-        return $this->hasMany(Account::class);
+        return $this->hasMany(Account::class)->orderBy('id');
     }
 
     public function categories(): HasMany

@@ -275,7 +275,7 @@
                             $isIncome = $transaction->type === 'income';
                             $isTransfer = $transaction->type === 'transfer';
                             $isPlanned = $transaction->status === 'planned';
-                            $baseColor = $isIncome ? 'green' : ($isTransfer ? 'yellow' : 'red');
+                            $baseColor = $isIncome ? 'green' : ($isTransfer ? 'orange' : 'red');
                             $colorIntensity = $isPlanned ? '400' : '600'; // Lighter for planned, darker for entered
                         @endphp
 
@@ -305,8 +305,11 @@
                             </div>
 
                             <div class="text-right">
+                                @php
+                                    $isTransferDestination = $isTransfer && $transaction->isTransferDestination();
+                                @endphp
                                 <p class="font-semibold text-{{ $baseColor }}-{{ $colorIntensity }} {{ $isPlanned ? 'opacity-75' : '' }}">
-                                    {{ $isIncome ? '+' : '-' }}${{ number_format($transaction->amount, 2) }}
+                                    {{ $isIncome || $isTransferDestination ? '+' : '-' }}${{ number_format($transaction->amount, 2) }}
                                 </p>
                             </div>
                         </div>
