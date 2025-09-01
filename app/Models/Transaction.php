@@ -1,4 +1,5 @@
 <?php
+/** @noinspection PhpUnused */
 
 declare(strict_types=1);
 
@@ -166,5 +167,60 @@ final class Transaction extends Model
         }
 
         return $this->isTransferSource() ? 'transfer_out' : 'transfer_in';
+    }
+
+    public function scopeUniqueDescriptions(Builder $query, ?int $accountId = null): Builder
+    {
+        $query = $query->select('description')
+                       ->selectRaw('COUNT(*) as usage_count')
+                       ->whereNotNull('description')
+                       ->where('description', '!=', '')
+                       ->groupBy('description')
+                       ->orderByDesc('usage_count')
+                       ->orderBy('description');
+
+        if ($accountId) {
+            $query->where('account_id', $accountId);
+        }
+
+        return $query;
+    }
+
+    public function scopeDescriptionSearch(Builder $query, string $term, ?int $accountId = null): Builder
+    {
+        $term = mb_trim($term);
+
+        if (empty($term)) {
+            return $query->whereRaw('1 = 0'); // Return empty result for empty search
+        }
+
+        $query = $query->select('description')
+                       ->selectRaw('COUNT(*) as usage_count')
+                       ->selectRaw('CASE
+                           WHEN LOWER(description) = LOWER(?) THEN 4
+                           WHEN LOWER(description) LIKE LOWER(?) THEN 3
+                           WHEN LOWER(description) LIKE LOWER(?) THEN 2
+                           ELSE 1
+                       END as relevance_score', [
+                           $term,
+                           $term.'%',
+                           '%'.$term.'%',
+                       ])
+                       ->whereNotNull('description')
+                       ->where('description', '!=', '')
+                       ->where(function ($q) use ($term) {
+                           $q->where('description', 'LIKE', '%'.$term.'%');
+                       })
+                       ->groupBy('description')
+                       ->orderByDesc('relevance_score')
+                       ->orderByDesc('usage_count')
+                       ->orderBy('description')
+                       ->limit(10);
+
+        if ($accountId) {
+            $query->where('account_id', $accountId);
+        }
+
+        return $query;
     }
 }
