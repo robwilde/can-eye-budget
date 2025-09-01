@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
+use App\Data\RuleTestResultData;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\CategoryRule;
 use App\Models\Transaction;
+use App\Services\CategoryMatchingService;
 use Exception;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
@@ -51,6 +53,19 @@ final class AutomationRules extends Component
     public bool $showDescriptionSuggestions = false;
 
     public int $selectedSuggestionIndex = -1;
+
+    // Rule testing properties
+    public ?int $testingRuleId = null;
+
+    public ?RuleTestResultData $testResults = null;
+
+    public bool $showPreviewModal = false;
+
+    public bool $showConfirmBulkModal = false;
+
+    public array $bulkApplicationResults = [];
+
+    public bool $isApplyingRules = false;
 
     public function mount(): void
     {
@@ -297,6 +312,104 @@ final class AutomationRules extends Component
         }
     }
 
+    // Rule Testing Methods
+
+    public function testRule(CategoryRule $rule): void
+    {
+        try {
+            $matchingService = app(CategoryMatchingService::class);
+            $this->testResults = $matchingService->testRule($rule);
+            $this->testingRuleId = $rule->id;
+            $this->showPreviewModal = true;
+        } catch (Exception $e) {
+            session()->flash('error', 'Error testing rule: '.$e->getMessage());
+        }
+    }
+
+    public function closePreviewModal(): void
+    {
+        $this->showPreviewModal = false;
+        $this->testResults = null;
+        $this->testingRuleId = null;
+    }
+
+    public function previewBulkApplication(): void
+    {
+        try {
+            $this->showConfirmBulkModal = true;
+        } catch (Exception $e) {
+            session()->flash('error', 'Error preparing bulk application: '.$e->getMessage());
+        }
+    }
+
+    public function closeBulkConfirmModal(): void
+    {
+        $this->showConfirmBulkModal = false;
+        $this->bulkApplicationResults = [];
+    }
+
+    public function applyRulesToExisting(): void
+    {
+        try {
+            $this->isApplyingRules = true;
+            $matchingService = app(CategoryMatchingService::class);
+
+            $this->bulkApplicationResults = $matchingService->applyRulesToTransactions(
+                auth()->user(),
+                [], // Apply all rules
+                200, // Limit to 200 transactions
+            );
+
+            $this->showConfirmBulkModal = false;
+            $this->isApplyingRules = false;
+
+            $categorized = $this->bulkApplicationResults['categorized'];
+            $recategorized = $this->bulkApplicationResults['recategorized'];
+            $errors = $this->bulkApplicationResults['errors'];
+
+            if ($errors > 0) {
+                $errorMessages = implode(', ', $this->bulkApplicationResults['error_messages']);
+                session()->flash('error', "Applied rules with $errors errors: $errorMessages");
+            } else {
+                session()->flash('message', "Successfully applied rules to $categorized new and $recategorized existing transactions.");
+            }
+        } catch (Exception $e) {
+            $this->isApplyingRules = false;
+            session()->flash('error', 'Error applying rules: '.$e->getMessage());
+        }
+    }
+
+    public function applySpecificRulesToExisting(int $ruleId): void
+    {
+        try {
+            $this->isApplyingRules = true;
+            $matchingService = app(CategoryMatchingService::class);
+
+            $results = $matchingService->applyRulesToTransactions(
+                auth()->user(),
+                [$ruleId], // Apply only this rule
+                100,        // Limit to 100 transactions
+            );
+
+            $this->closePreviewModal();
+            $this->isApplyingRules = false;
+
+            $categorized = $results['categorized'];
+            $recategorized = $results['recategorized'];
+            $errors = $results['errors'];
+
+            if ($errors > 0) {
+                $errorMessages = implode(', ', $results['error_messages']);
+                session()->flash('error', "Applied rule with $errors errors: $errorMessages");
+            } else {
+                session()->flash('message', "Successfully applied rule to $categorized new and $recategorized existing transactions.");
+            }
+        } catch (Exception $e) {
+            $this->isApplyingRules = false;
+            session()->flash('error', 'Error applying rule: '.$e->getMessage());
+        }
+    }
+
     public function render(): View
     {
         return view('livewire.automation-rules')
@@ -315,6 +428,15 @@ final class AutomationRules extends Component
         $this->descriptionSearchResults = [];
         $this->showDescriptionSuggestions = false;
         $this->selectedSuggestionIndex = -1;
+
+        // Reset testing properties
+        $this->testingRuleId = null;
+        $this->testResults = null;
+        $this->showPreviewModal = false;
+        $this->showConfirmBulkModal = false;
+        $this->bulkApplicationResults = [];
+        $this->isApplyingRules = false;
+
         $this->resetErrorBag();
     }
 }
