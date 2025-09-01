@@ -18,6 +18,7 @@ Route::middleware(['auth'])->group(function () {
     // Budget management routes
     Route::get('accounts', App\Livewire\AccountsPage::class)->name('accounts');
     Route::get('categories', App\Livewire\CategoriesPage::class)->name('categories');
+    Route::get('automation', App\Livewire\AutomationRules::class)->name('automation');
 
     // Import routes
     Route::get('import', App\Livewire\ImportWizard::class)->name('import.wizard');
