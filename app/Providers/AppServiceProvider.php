@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Livewire\Synthesizers\DataSynthesizer;
 use Illuminate\Support\ServiceProvider;
+use Livewire\Livewire;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -21,6 +23,6 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        Livewire::propertySynthesizer(DataSynthesizer::class);
     }
 }
