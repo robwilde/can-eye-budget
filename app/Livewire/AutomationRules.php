@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Livewire;
 
-use App\Data\RuleTestResultData;
 use App\Models\Account;
 use App\Models\Category;
 use App\Models\CategoryRule;
@@ -14,9 +13,11 @@ use Exception;
 use Illuminate\Contracts\View\View;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
+use Throwable;
 
 final class AutomationRules extends Component
 {
@@ -57,7 +58,7 @@ final class AutomationRules extends Component
     // Rule testing properties
     public ?int $testingRuleId = null;
 
-    public ?RuleTestResultData $testResults = null;
+    public ?array $testResults = null;
 
     public bool $showPreviewModal = false;
 
@@ -66,6 +67,10 @@ final class AutomationRules extends Component
     public array $bulkApplicationResults = [];
 
     public bool $isApplyingRules = false;
+
+    public bool $showResultsModal = false;
+
+    public array $detailedResults = [];
 
     public function mount(): void
     {
@@ -314,15 +319,102 @@ final class AutomationRules extends Component
 
     // Rule Testing Methods
 
+    public function testUnsavedRule(): void
+    {
+        // Clear any previous test results
+        $this->testResults = null;
+        $this->showPreviewModal = false;
+
+        // Validate current form data first
+        $this->validate([
+            'categoryId' => [
+                'required',
+                'integer',
+                function ($attribute, $value, $fail) {
+                    $category = Category::forUser(auth()->id())->find($value);
+                    if (! $category) {
+                        $fail('The selected category is invalid.');
+                    }
+                },
+            ],
+            'field'    => 'required|in:description,amount',
+            'operator' => 'required|string',
+            'value'    => 'required|string|max:255',
+            'priority' => 'required|integer|min:1|max:100',
+        ]);
+
+        try {
+            // Create a temporary rule object for testing
+            $tempRule = new CategoryRule([
+                'category_id' => $this->categoryId,
+                'account_id'  => $this->accountId,
+                'field'       => $this->field,
+                'operator'    => $this->operator,
+                'value'       => $this->value,
+                'priority'    => $this->priority,
+            ]);
+
+            // Set the category relationship manually
+            $tempRule->category = Category::find($this->categoryId);
+            if ($this->accountId) {
+                $tempRule->account = Account::find($this->accountId);
+            }
+
+            $matchingService = app(CategoryMatchingService::class);
+            $results = $matchingService->testRule($tempRule, 50); // Limit to 50 for comprehensive preview
+
+            // Convert to array for Livewire
+            $this->testResults = [
+                'totalMatches'              => $results->totalMatches,
+                'totalAmount'               => $results->totalAmount,
+                'uncategorizedMatches'      => $results->uncategorizedMatches,
+                'alreadyCategorizedMatches' => $results->alreadyCategorizedMatches,
+                'transactions'              => $results->transactions->toArray(),
+                'conflicts'                 => $results->conflicts->toArray(),
+                'error'                     => $results->error,
+                'hasConflicts'              => $results->hasConflicts(),
+                'affectedTransactionIds'    => $results->getAffectedTransactionIds(),
+            ];
+
+            $this->testingRuleId = null; // No saved rule ID for unsaved test
+            $this->showPreviewModal = true;
+        } catch (Exception $e) {
+            session()->flash('error', 'Error testing rule: '.$e->getMessage());
+            Log::error('Unsaved rule testing failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+        }
+    }
+
     public function testRule(CategoryRule $rule): void
     {
         try {
             $matchingService = app(CategoryMatchingService::class);
-            $this->testResults = $matchingService->testRule($rule);
+            $results = $matchingService->testRule($rule);
+
+            // Convert RuleTestResultData to array for Livewire compatibility
+            $this->testResults = [
+                'totalMatches'              => $results->totalMatches,
+                'totalAmount'               => $results->totalAmount,
+                'uncategorizedMatches'      => $results->uncategorizedMatches,
+                'alreadyCategorizedMatches' => $results->alreadyCategorizedMatches,
+                'transactions'              => $results->transactions->toArray(),
+                'conflicts'                 => $results->conflicts->toArray(),
+                'error'                     => $results->error,
+                'hasConflicts'              => $results->hasConflicts(),
+                'affectedTransactionIds'    => $results->getAffectedTransactionIds(),
+            ];
+
             $this->testingRuleId = $rule->id;
             $this->showPreviewModal = true;
         } catch (Exception $e) {
             session()->flash('error', 'Error testing rule: '.$e->getMessage());
+            Log::error('Rule testing failed', [
+                'rule_id' => $rule->id,
+                'error'   => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
         }
     }
 
@@ -348,6 +440,15 @@ final class AutomationRules extends Component
         $this->bulkApplicationResults = [];
     }
 
+    public function closeResultsModal(): void
+    {
+        $this->showResultsModal = false;
+        $this->detailedResults = [];
+    }
+
+    /**
+     * @throws Throwable
+     */
     public function applyRulesToExisting(): void
     {
         try {
@@ -356,29 +457,36 @@ final class AutomationRules extends Component
 
             $this->bulkApplicationResults = $matchingService->applyRulesToTransactions(
                 auth()->user(),
-                [], // Apply all rules
+                [],  // Apply all rules
                 200, // Limit to 200 transactions
             );
 
+            // Get detailed rule-by-rule breakdown
+            $rules = $this->getAllUserRules();
+            $this->detailedResults = [
+                'summary'       => $this->bulkApplicationResults,
+                'rules_applied' => $this->getAppliedRulesDetails($rules),
+                'timestamp'     => now()->format('M j, Y g:i A'),
+            ];
+
             $this->showConfirmBulkModal = false;
             $this->isApplyingRules = false;
-
-            $categorized = $this->bulkApplicationResults['categorized'];
-            $recategorized = $this->bulkApplicationResults['recategorized'];
-            $errors = $this->bulkApplicationResults['errors'];
-
-            if ($errors > 0) {
-                $errorMessages = implode(', ', $this->bulkApplicationResults['error_messages']);
-                session()->flash('error', "Applied rules with $errors errors: $errorMessages");
-            } else {
-                session()->flash('message', "Successfully applied rules to $categorized new and $recategorized existing transactions.");
-            }
+            $this->showResultsModal = true;
         } catch (Exception $e) {
             $this->isApplyingRules = false;
+            $this->showConfirmBulkModal = false;
             session()->flash('error', 'Error applying rules: '.$e->getMessage());
+            Log::error('Bulk rule application failed', [
+                'user_id' => auth()->id(),
+                'error'   => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
         }
     }
 
+    /**
+     * @throws Throwable
+     */
     public function applySpecificRulesToExisting(int $ruleId): void
     {
         try {
@@ -387,8 +495,7 @@ final class AutomationRules extends Component
 
             $results = $matchingService->applyRulesToTransactions(
                 auth()->user(),
-                [$ruleId], // Apply only this rule
-                100,        // Limit to 100 transactions
+                [$ruleId]
             );
 
             $this->closePreviewModal();
@@ -407,6 +514,11 @@ final class AutomationRules extends Component
         } catch (Exception $e) {
             $this->isApplyingRules = false;
             session()->flash('error', 'Error applying rule: '.$e->getMessage());
+            Log::error('Rule application failed', [
+                'rule_id' => $ruleId,
+                'error'   => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
         }
     }
 
@@ -436,7 +548,51 @@ final class AutomationRules extends Component
         $this->showConfirmBulkModal = false;
         $this->bulkApplicationResults = [];
         $this->isApplyingRules = false;
+        $this->showResultsModal = false;
+        $this->detailedResults = [];
 
         $this->resetErrorBag();
+    }
+
+    /**
+     * Get all rules for the current user
+     */
+    private function getAllUserRules(): Collection
+    {
+        return CategoryRule::whereHas('category', static function ($query) {
+            $query->where('user_id', auth()->id());
+        })
+                           ->with(['category', 'account'])
+                           ->byPriority()
+                           ->get();
+    }
+
+    /**
+     * Get detailed results for each rule that was applied
+     */
+    private function getAppliedRulesDetails(Collection $rules): array
+    {
+        return $rules->map(function (CategoryRule $rule) {
+            // Count recent transactions that would match this rule
+            $recentMatches = Transaction::whereHas('account', static function ($q) {
+                $q->where('user_id', auth()->id());
+            })
+                                        ->where('applied_rule_id', $rule->id)
+                                        ->where('auto_categorized_at', '>=', now()->subMinutes(5))
+                                        ->count();
+
+            return [
+                'rule_id'         => $rule->id,
+                'category_name'   => $rule->category->name,
+                'account_name'    => $rule->account?->name ?? 'All accounts',
+                'field'           => $rule->field,
+                'operator'        => $rule->operator,
+                'value'           => $rule->value,
+                'priority'        => $rule->priority,
+                'matches_applied' => $recentMatches,
+            ];
+        })->filter(function ($ruleDetail) {
+            return $ruleDetail['matches_applied'] > 0;
+        })->values()->toArray();
     }
 }
