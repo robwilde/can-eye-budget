@@ -1,5 +1,7 @@
 <?php
 
+/** @noinspection LaravelFunctionsInspection */
+
 declare(strict_types=1);
 
 /*
@@ -13,12 +15,18 @@ declare(strict_types=1);
 |
 */
 
-pest()->extend(Tests\TestCase::class)
+use App\Models\User;
+use Pest\Browser\Api\ArrayablePendingAwaitablePage;
+use Pest\Browser\Api\PendingAwaitablePage;
+
+pest()
+    ->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature');
 
 // Configure browser tests
-pest()->extend(Tests\TestCase::class)
+pest()
+    ->extend(Tests\TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Browser');
 
@@ -32,14 +40,16 @@ pest()->printer()->compact();
 |
 | Configure default settings for browser testing with Playwright.
 | These settings control timeouts, browser preferences, and viewport options.
+| Special configuration for Distrobox container environment.
 |
 */
 
-// Set default browser timeout to 10 seconds (10000ms)
-pest()->browser()->timeout(10000);
+// Basic browser configuration for Pest 4
+// Note: Many browser settings are configured through environment variables or test-specific methods
+// Base URL is automatically read from APP_URL in .env.testing
 
-// Use Chrome by default (can be overridden with --browser flag)
-// pest()->browser()->inChrome(); // Default, so commenting out
+// Only use methods that definitely exist in Pest 4
+// pest()->browser()->timeout(15000); // Commenting out until we verify the correct method
 
 /*
 |--------------------------------------------------------------------------
@@ -70,6 +80,36 @@ expect()->extend('toBeOne', function () {
 function something()
 {
     // ..
+}
+
+/**
+ * Helper function to handle browser test login flow.
+ *
+ * @return ArrayablePendingAwaitablePage|PendingAwaitablePage The browser page object for chaining
+ */
+function dashboard(): ArrayablePendingAwaitablePage|PendingAwaitablePage
+{
+    $page = visit('/');
+
+    if (! str_ends_with($page->url(), '/login')) {
+        return $page;
+    }
+
+    // Use environment credentials when no user provided
+    $email = env('TEST_USER_EMAIL', 'figjam@mrwilde.com');
+    $password = env('TEST_USER_PASSWORD', 'password');
+
+    // Perform login
+    $page
+        ->fill('email', $email)
+        ->fill('password', $password)
+        ->click('[type="submit"]')
+        ->wait(1);
+
+    // Verify we're no longer on the login page
+    $page->assertPathIsNot('/login')->assertTitle('Dashboard');
+
+    return $page;
 }
 
 /*

@@ -6,23 +6,43 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
+use Tests\Concerns\UseRealDataForBrowserTests;
+
+uses(UseRealDataForBrowserTests::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    $this->account = Account::factory()->for($this->user)->create();
-    $this->parentCategory = Category::factory()->create([
-        'name'      => 'Parent Category',
-        'user_id'   => $this->user->id,
-        'parent_id' => null,
-    ]);
+    // Copy real database data for realistic browser testing
+    $this->copyRealDatabaseForBrowserTest();
+
+    // Get the first user from the copied data or create one
+    $this->user = User::first();
+    if (! $this->user) {
+        $this->user = User::factory()->create();
+    }
+
+    // Get the first account from the user or create one
+    $this->account = $this->user->accounts()->first();
+    if (! $this->account) {
+        $this->account = Account::factory()->for($this->user)->create();
+    }
+
+    // Get or create parent category
+    $this->parentCategory = Category::where('user_id', $this->user->id)->whereNull('parent_id')->first();
+    if (! $this->parentCategory) {
+        $this->parentCategory = Category::factory()->create([
+            'name'      => 'Parent Category',
+            'user_id'   => $this->user->id,
+            'parent_id' => null,
+        ]);
+    }
 });
 
 test('user can access category manager', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager (assuming it's in settings or main navigation)
@@ -40,8 +60,8 @@ test('user can create new parent category', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -70,8 +90,8 @@ test('user can create subcategory', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -104,8 +124,8 @@ test('user can edit existing category', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -140,8 +160,8 @@ test('user can delete category without transactions', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -176,8 +196,8 @@ test('user cannot delete category with transactions', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -202,8 +222,8 @@ test('user can set up category rules', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -246,8 +266,8 @@ test('category hierarchy displays correctly', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -276,8 +296,8 @@ test('user can collapse and expand category tree', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -314,8 +334,8 @@ test('category manager shows transaction counts', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager
@@ -333,8 +353,8 @@ test('category manager works on mobile', function () {
     $page = visit('/login')->on()->mobile();
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to category manager

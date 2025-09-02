@@ -6,31 +6,57 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
+use Tests\Concerns\UseRealDataForBrowserTests;
+
+uses(UseRealDataForBrowserTests::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    $this->account = Account::factory()->for($this->user)->create([
-        'name'    => 'Main Checking',
-        'type'    => 'checking',
-        'balance' => 1000.00,
-    ]);
-    $this->secondAccount = Account::factory()->for($this->user)->create([
-        'name'    => 'Savings',
-        'type'    => 'savings',
-        'balance' => 2000.00,
-    ]);
-    $this->category = Category::factory()->create([
-        'name'    => 'Groceries',
-        'user_id' => $this->user->id,
-    ]);
+    // Copy real database data for realistic browser testing
+    $this->copyRealDatabaseForBrowserTest();
+
+    // Get the first user from the copied data or create one
+    $this->user = User::first();
+    if (! $this->user) {
+        $this->user = User::factory()->create();
+    }
+
+    // Get accounts from the user or create them
+    $accounts = $this->user->accounts()->take(2)->get();
+    $this->account = $accounts->first();
+    $this->secondAccount = $accounts->skip(1)->first();
+
+    if (! $this->account) {
+        $this->account = Account::factory()->for($this->user)->create([
+            'name'    => 'Main Checking',
+            'type'    => 'checking',
+            'balance' => 1000.00,
+        ]);
+    }
+
+    if (! $this->secondAccount) {
+        $this->secondAccount = Account::factory()->for($this->user)->create([
+            'name'    => 'Savings',
+            'type'    => 'savings',
+            'balance' => 2000.00,
+        ]);
+    }
+
+    // Get or create category
+    $this->category = Category::where('user_id', $this->user->id)->first();
+    if (! $this->category) {
+        $this->category = Category::factory()->create([
+            'name'    => 'Groceries',
+            'user_id' => $this->user->id,
+        ]);
+    }
 });
 
 test('user can create a new expense transaction', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Open transaction form
@@ -59,8 +85,8 @@ test('user can create a new income transaction', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Open transaction form
@@ -88,8 +114,8 @@ test('user can create a transfer transaction', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Open transaction form
@@ -125,8 +151,8 @@ test('user can edit existing transaction', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Click edit button on transaction
@@ -163,8 +189,8 @@ test('user can delete transaction', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Should see the transaction initially
@@ -191,8 +217,8 @@ test('form validates required fields', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Open transaction form
@@ -211,8 +237,8 @@ test('user can create new category from transaction form', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Open transaction form
@@ -246,8 +272,8 @@ test('transaction form works on mobile', function () {
     $page = visit('/login')->on()->mobile();
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Open transaction form
@@ -272,8 +298,8 @@ test('form remembers last used values', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Create first transaction

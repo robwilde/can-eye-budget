@@ -103,13 +103,13 @@ describe('Bulk Rule Application', function () {
         $category1 = Category::factory()->for($this->user)->create(['name' => 'Category 1']);
         $category2 = Category::factory()->for($this->user)->create(['name' => 'Category 2']);
 
-        // Create rules with different priorities - higher priority should win
+        // Create rules with different priorities - lower number = higher priority
         CategoryRule::factory()->create([
             'category_id' => $category1->id,
             'field'       => 'description',
             'operator'    => 'contains',
             'value'       => 'store',
-            'priority'    => 1, // Lower priority
+            'priority'    => 2, // Lower priority (higher number)
         ]);
 
         $highPriorityRule = CategoryRule::factory()->create([
@@ -117,7 +117,7 @@ describe('Bulk Rule Application', function () {
             'field'       => 'description',
             'operator'    => 'contains',
             'value'       => 'grocery',
-            'priority'    => 2, // Higher priority
+            'priority'    => 1, // Higher priority (lower number)
         ]);
 
         // Create transaction that matches both rules

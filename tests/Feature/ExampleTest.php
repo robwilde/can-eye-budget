@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-test('returns a successful response', function () {
+test('home redirects unauthenticated users to login', function () {
     $response = $this->get('/');
 
-    $response->assertStatus(200);
+    $response->assertRedirect('/login');
 });
