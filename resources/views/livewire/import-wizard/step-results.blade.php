@@ -173,7 +173,7 @@
     {{-- Action Buttons --}}
     <div class="flex flex-col sm:flex-row gap-3 pt-6">
         @if(isset($importResult['success']) && $importResult['success'])
-            <flux:button variant="primary" href="{{ route('dashboard') }}" class="flex-1">
+            <flux:button variant="primary" href="{{ route('home') }}" class="flex-1">
                 <flux:icon.chart-bar class="w-4 h-4 mr-2" />
                 View Dashboard
             </flux:button>
@@ -192,7 +192,7 @@
                 <flux:icon.arrow-path class="w-4 h-4 mr-2" />
                 Try Again
             </flux:button>
-            <flux:button variant="outline" href="{{ route('dashboard') }}" class="flex-1">
+            <flux:button variant="outline" href="{{ route('home') }}" class="flex-1">
                 <flux:icon.home class="w-4 h-4 mr-2" />
                 Back to Dashboard
             </flux:button>
