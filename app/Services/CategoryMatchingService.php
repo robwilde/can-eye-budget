@@ -289,6 +289,23 @@ final class CategoryMatchingService
      */
     public function getConflictingRules(CategoryRule $rule): Collection
     {
+        // Get recent transactions to test against
+        $testTransactions = Transaction::with(['category', 'account'])
+                                       ->orderBy('transaction_date', 'desc')
+                                       ->limit(100)
+                                       ->get();
+
+        // Filter transactions that match the current rule
+        $matchingTransactions = $testTransactions->filter(function ($transaction) use ($rule) {
+            // Check account filter if applicable
+            if ($rule->account_id && $rule->account_id !== $transaction->account_id) {
+                return false;
+            }
+
+            return $rule->matches($transaction->description, (float) $transaction->amount);
+        });
+
+        // Get other rules that might conflict
         $existingRules = CategoryRule::whereHas('category', static function ($query) use ($rule) {
             $query->where('user_id', $rule->category->user_id);
         })
@@ -299,10 +316,25 @@ final class CategoryMatchingService
         $conflicts = collect();
 
         foreach ($existingRules as $existingRule) {
-            $conflictType = $this->detectConflictType($rule, $existingRule);
+            // Check if this rule would match any of the same transactions
+            $hasConflictingTransaction = $matchingTransactions->contains(function ($transaction) use ($existingRule) {
+                // Check account filter if applicable
+                if ($existingRule->account_id && $existingRule->account_id !== $transaction->account_id) {
+                    return false;
+                }
 
-            if ($conflictType) {
-                $conflicts->push(RuleConflictData::fromRules($rule, $existingRule, $conflictType));
+                return $existingRule->matches($transaction->description, (float) $transaction->amount);
+            });
+
+            if ($hasConflictingTransaction) {
+                // Determine the type of conflict
+                $conflictType = $this->detectConflictType($rule, $existingRule);
+                if (! $conflictType) {
+                    // If no specific type detected, it's still a transaction overlap
+                    $conflictType = 'transaction_overlap';
+                }
+
+                $conflicts->push($existingRule);
             }
         }
 
@@ -340,10 +372,8 @@ final class CategoryMatchingService
                                 ->orderBy('transaction_date', 'desc')
                                 ->limit($limit);
 
-            if (empty($ruleIds)) {
-                // Apply to uncategorized transactions only
-                $query->whereNull('category_id');
-            }
+            // Note: When no specific rule IDs provided, we check ALL transactions
+            // to allow for recategorization based on priority
 
             $transactions = $query->get();
 
@@ -366,14 +396,30 @@ final class CategoryMatchingService
 
                 if ($matchingRule) {
                     $wasAlreadyCategorized = $transaction->category_id !== null;
+                    $shouldApply = true;
 
-                    // Apply the rule
-                    $transaction->applyRule($matchingRule);
+                    // Check if we should apply based on priority
+                    if ($wasAlreadyCategorized && $transaction->applied_rule_id) {
+                        // Get the previously applied rule
+                        $previousRule = CategoryRule::find($transaction->applied_rule_id);
 
-                    if ($wasAlreadyCategorized) {
-                        $results['recategorized']++;
-                    } else {
-                        $results['categorized']++;
+                        // Only apply if new rule has higher priority (lower number)
+                        if ($previousRule && $previousRule->priority <= $matchingRule->priority) {
+                            $shouldApply = false;
+                        }
+                    }
+                    // If transaction is categorized but has no applied_rule_id,
+                    // we consider it manually categorized with lowest priority, so any rule can override it
+
+                    if ($shouldApply) {
+                        // Apply the rule
+                        $transaction->applyRule($matchingRule);
+
+                        if ($wasAlreadyCategorized) {
+                            $results['recategorized']++;
+                        } else {
+                            $results['categorized']++;
+                        }
                     }
                 }
             }
