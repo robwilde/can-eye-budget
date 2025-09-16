@@ -39,11 +39,11 @@ final class CategoryRule extends Model
     }
 
     /**
-     * Scope to order by priority (highest first)
+     * Scope to order by priority (lower number = higher priority)
      */
     public function scopeByPriority(Builder $query): Builder
     {
-        return $query->orderBy('priority', 'desc');
+        return $query->orderBy('priority');
     }
 
     /**
@@ -64,17 +64,28 @@ final class CategoryRule extends Model
 
     public function matches(string $description, float $amount): bool
     {
-        $testValue = $this->field === 'description' ? $description : $amount;
+        if ($this->field === 'description') {
+            $testValue = mb_trim($description);
+            $searchValue = mb_trim($this->value);
+
+            return match ($this->operator) {
+                'contains'    => mb_stripos($testValue, $searchValue) !== false,
+                'equals'      => mb_strtolower($testValue) === mb_strtolower($searchValue),
+                'starts_with' => mb_stripos($testValue, $searchValue) === 0,
+                'ends_with'   => mb_strripos($testValue, $searchValue) === mb_strlen($testValue) - mb_strlen($searchValue),
+                default       => false
+            };
+        }
+        // Handle amount field
+        $ruleValue = (float) $this->value;
 
         return match ($this->operator) {
-            'contains'     => str_contains(mb_strtolower($testValue), mb_strtolower($this->value)),
-            'equals'       => mb_strtolower($testValue) === mb_strtolower($this->value),
-            'starts_with'  => str_starts_with(mb_strtolower($testValue), mb_strtolower($this->value)),
-            'ends_with'    => str_ends_with(mb_strtolower($testValue), mb_strtolower($this->value)),
-            'greater_than' => is_numeric($testValue) && (float) $testValue > (float) $this->value,
-            'less_than'    => is_numeric($testValue) && (float) $testValue < (float) $this->value,
+            'equals'       => abs($amount - $ruleValue) < 0.001,
+            'greater_than' => $amount > $ruleValue,
+            'less_than'    => $amount < $ruleValue,
             default        => false
         };
+
     }
 
     public function getDisplayName(): string
