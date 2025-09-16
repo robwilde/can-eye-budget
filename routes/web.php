@@ -4,13 +4,9 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-})->name('home');
-
-Route::view('dashboard', 'dashboard')
+Route::view('/', 'dashboard')
     ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+    ->name('home');
 
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
@@ -25,15 +21,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('imports', App\Livewire\ImportHistory::class)->name('import.history');
 
     // Settings routes - these will need traditional Livewire components
-    Route::get('settings/profile', function () {
+    Route::get('settings/profile', static function () {
         return view('settings.profile');
     })->name('settings.profile');
 
-    Route::get('settings/password', function () {
+    Route::get('settings/password', static function () {
         return view('settings.password');
     })->name('settings.password');
 
-    Route::get('settings/appearance', function () {
+    Route::get('settings/appearance', static function () {
         return view('settings.appearance');
     })->name('settings.appearance');
 });
