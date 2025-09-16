@@ -6,20 +6,35 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\User;
+use Tests\Concerns\UseRealDataForBrowserTests;
+
+uses(UseRealDataForBrowserTests::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
-    $this->account = Account::factory()->create([
-        'user_id' => $this->user->id,
-    ]);
+    // Copy real database data for realistic browser testing
+    $this->copyRealDatabaseForBrowserTest();
+
+    // Get the first user from the copied data or create one
+    $this->user = User::first();
+    if (! $this->user) {
+        $this->user = User::factory()->create();
+    }
+
+    // Get the first account from the user or create one
+    $this->account = $this->user->accounts()->first();
+    if (! $this->account) {
+        $this->account = Account::factory()->create([
+            'user_id' => $this->user->id,
+        ]);
+    }
 });
 
 test('user can access categories page', function () {
     $page = visit('/login');
 
     // Login first
-    $page->fill('email', $this->user->email)
-         ->fill('password', 'password')
+    $page->fill('email', env('TEST_USER_EMAIL', 'figjam@mrwilde.com'))
+         ->fill('password', env('TEST_USER_PASSWORD', 'password'))
          ->click('Log in');
 
     // Navigate to categories page

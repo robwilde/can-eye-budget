@@ -90,7 +90,7 @@
                     <flux:button variant="primary" wire:click="startOver">
                         Import Another File
                     </flux:button>
-                    <flux:button variant="outline" href="{{ route('dashboard') }}">
+                    <flux:button variant="outline" href="{{ route('home') }}">
                         Go to Dashboard
                     </flux:button>
                 @else
