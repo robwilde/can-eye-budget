@@ -33,3 +33,4 @@ yarn-error.log
 
 # Browser testing screenshots
 /tests/Browser/Screenshots
+tests/Browser/Screenshots/

@@ -9,7 +9,8 @@ calendar-based views for income/expenses, projections, and bank reconciliation c
 
 ## Documentation References
 
-- The PEST PHP Docs are available for reference: https://context7.com/pestphp/docs/llms.txt
+- The PEST PHP Docs are available for reference: `docs/packages/repomix-pestphp-docs.md`
+- Playwright functions available in PEST for browser testing can be found `docs/guide/playwright-functions-available-pest.md`
 - Debug tools documentation:
     - `barryvdh/laravel-debugbar` reference: http://phpdebugbar.com/docs/all.html
     - `spatie\laravel-ray` reference: https://context7.com/spatie/myray.app/llms.txt
@@ -59,6 +60,11 @@ php artisan test             # Run tests directly
 ./vendor/bin/pest --mutate   # Run mutation testing (requires XDEBUG_MODE=coverage)
 ./vendor/bin/pest --mutate --covered-only --min=60  # Mutation testing with 60% minimum score
 ./vendor/bin/pest --parallel # Run tests in parallel
+
+# Browser Testing (PEST 4)
+op pest-headed tests/Browser/  # Run browser tests in headed mode (uses op.conf alias)
+PEST_BROWSER_HEADLESS=false ./vendor/bin/pest tests/Browser/ --headed  # Direct command
+PEST_BROWSER_SLOWMO=1000 ./vendor/bin/pest tests/Browser/ # Slow motion for debugging
 ```
 
 ### Code Quality
@@ -129,6 +135,8 @@ resources/views/components/ # Blade components
 resources/views/flux/       # Custom Flux UI components
 tests/Feature/             # Feature tests with RefreshDatabase
 tests/Unit/               # Unit tests
+tests/Browser/            # PEST 4 browser tests
+tests/Concerns/           # Shared test traits and utilities
 ```
 
 ## Development Workflow
@@ -160,6 +168,7 @@ The application follows a multi-entity budget model:
 - RefreshDatabase for Feature tests
 - SQLite in-memory database for testing
 - Factory pattern for test data generation
+- Browser testing with real data copying for realistic UI tests
 - Mutation testing for test quality assurance
 - Architecture testing for code structure enforcement
 - Compact output format for cleaner test results
@@ -186,6 +195,23 @@ The application follows a multi-entity budget model:
 - Quality: Laravel Pint, security advisories
 
 ## PEST 4 Features
+
+### Browser Testing
+
+Browser testing is configured for Distrobox container environments and includes real data integration:
+
+```bash
+# Run browser tests in headed mode (see browser interactions)
+op pest-headed tests/Browser/
+
+# Run with specific environment variables
+PEST_BROWSER_HEADLESS=false ./vendor/bin/pest tests/Browser/ --headed
+
+# Debug with slow motion
+PEST_BROWSER_SLOWMO=1000 ./vendor/bin/pest tests/Browser/
+```
+
+**Real Data Integration**: Browser tests can copy real database data using the `UseRealDataForBrowserTests` trait, ensuring realistic UI testing scenarios with actual user data, transactions, and categories.
 
 ### Mutation Testing
 
@@ -219,6 +245,25 @@ covers(App\Models\User::class);
 
 test('user model test', function () {
     // test implementation
+});
+```
+
+### Browser Test Configuration
+
+Browser tests are configured to work in Distrobox container environments:
+
+- **Environment Variables**: Configure via `.env.testing` (APP_KEY, database settings)
+- **Real Data Trait**: Use `UseRealDataForBrowserTests` trait to copy `database/database.sqlite` to test environment
+- **Container Setup**: Playwright runs in Ubuntu container, Laravel app runs on host
+- **Network Configuration**: Tests connect to host application via container networking
+
+Example browser test setup:
+```php
+uses(UseRealDataForBrowserTests::class);
+
+beforeEach(function () {
+    $this->copyRealDatabaseForBrowserTest();
+    $this->user = User::first(); // Use real user data
 });
 ```
 

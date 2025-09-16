@@ -1,5 +1,7 @@
 # CanEye Budget - Personal Budget Management Application
 
+<img alt="can-eye-budget-logo.png" height="384" src="public/images/can-eye-bugget-logo.png" width="256"/>
+
 A modern personal budgeting application built with Laravel 12 and PHP 8.4, featuring calendar-based views, transaction management, CSV import capabilities, and intelligent balance projections.
 
 ## Features
