@@ -149,6 +149,9 @@ final class ImportService
         return $this->detectDuplicates($account, $csvData);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function resolveDuplicates(Import $import, array $resolutions): int
     {
         $resolvedCount = 0;
@@ -158,7 +161,6 @@ final class ImportService
                 $this->createTransactionFromResolution($import, $resolution);
                 $resolvedCount++;
             }
-            // 'skip' action requires no processing
         }
 
         return $resolvedCount;
@@ -200,9 +202,9 @@ final class ImportService
         $csvData = collect();
 
         if (($handle = fopen($path, 'rb')) !== false) {
-            $headers = fgetcsv($handle, 0, ',', '"');
+            $headers = fgetcsv($handle, 0);
 
-            while (($row = fgetcsv($handle, 0, ',', '"')) !== false) {
+            while (($row = fgetcsv($handle, 0)) !== false) {
                 if (count($row) === count($headers)) {
                     $csvData->push(array_combine($headers, $row));
                 }
@@ -432,7 +434,7 @@ final class ImportService
                     recurringPatternId : Optional::create(),
                     importId           : $import->id,
                     reconciled         : false,
-                    status             : 'entered',
+                    status             : 'planned',
                     account            : Optional::create(),
                     category           : Optional::create(),
                     transferToAccount  : Optional::create(),
@@ -455,6 +457,9 @@ final class ImportService
         return $createdTransactions;
     }
 
+    /**
+     * @throws Throwable
+     */
     private function createTransactionFromResolution(Import $import, array $resolution): void
     {
         $csvRow = $resolution['csv_row'];
