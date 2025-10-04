@@ -9,7 +9,7 @@
                     {{-- Transaction Type Dropdown --}}
                     <div class="relative">
                         <select wire:model.live="type"
-                                class="appearance-none bg-transparent text-lg font-medium capitalize pr-8 focus:outline-none cursor-pointer @if($type === 'income') text-green-600 @elseif($type === 'transfer') @else @endif">
+                                class="appearance-none bg-transparent text-lg font-medium capitalize pr-8 focus:outline-none cursor-pointer @if($type === 'income') text-green-600 @elseif($type === 'transfer') text-yellow-600 @else text-red-600 @endif">
                             <option value="expense" class="text-red-600">Expense</option>
                             <option value="income" class="text-green-600">Income</option>
                             <option value="transfer" class="text-yellow-600">Transfer</option>
@@ -259,21 +259,9 @@
             <div class="flex justify-center">
                 <button
                     wire:click="save"
-                    class="w-full text-white px-8 py-3 rounded-lg font-medium transition-colors @if($type === 'income') bg-green-600 hover:bg-green-700 @endif"
+                    class="w-full text-white px-8 py-3 rounded-lg font-medium transition-colors @if($type === 'income') bg-green-600 hover:bg-green-700 @elseif($type === 'transfer') bg-yellow-600 hover:bg-yellow-700 @else bg-red-600 hover:bg-red-700 @endif"
                 >
-                    @if($mode === 'edit')
-                        @if($status === 'planned')
-                            Update {{ ucfirst($type) }}
-                        @else
-                            Confirm {{ ucfirst($type) }}
-                        @endif
-                    @else
-                        @if($status === 'planned')
-                            Add {{ ucfirst($type) }}
-                        @else
-                            Enter {{ ucfirst($type) }}
-                        @endif
-                    @endif
+                    {{ $this->buttonText }}
                 </button>
             </div>
 
