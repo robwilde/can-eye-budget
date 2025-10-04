@@ -29,16 +29,20 @@
 
             {{-- View Switcher --}}
             <div class="flex rounded-lg border border-gray-200">
-                <button wire:click="setView('day')" class="px-3 py-2 text-sm {{ $view === 'day' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} rounded-l-lg">
+                <button wire:click="setView('day')"
+                        class="px-3 py-2 text-sm {{ $view === 'day' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} rounded-l-lg">
                     Day
                 </button>
-                <button wire:click="setView('week')" class="px-3 py-2 text-sm {{ $view === 'week' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} border-l border-r border-gray-200">
+                <button wire:click="setView('week')"
+                        class="px-3 py-2 text-sm {{ $view === 'week' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} border-l border-r border-gray-200">
                     Week
                 </button>
-                <button wire:click="setView('month')" class="px-3 py-2 text-sm {{ $view === 'month' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} border-r border-gray-200">
+                <button wire:click="setView('month')"
+                        class="px-3 py-2 text-sm {{ $view === 'month' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} border-r border-gray-200">
                     Month
                 </button>
-                <button wire:click="setView('year')" class="px-3 py-2 text-sm {{ $view === 'year' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} rounded-r-lg">
+                <button wire:click="setView('year')"
+                        class="px-3 py-2 text-sm {{ $view === 'year' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50' }} rounded-r-lg">
                     Year
                 </button>
             </div>
@@ -53,16 +57,16 @@
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-gray-600 dark:text-gray-400">Incomes</span>
-                    <span class="text-green-600 font-medium">+${{ number_format($this->periodTotals['planned']['income'], 0, '.', ',') }}</span>
+                    <span class="text-green-600 font-medium">+${{ number_format($this->periodTotals['planned']['income']) }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-600 dark:text-gray-400">Expenses</span>
-                    <span class="text-red-600 font-medium">-${{ number_format($this->periodTotals['planned']['expenses'], 0, '.', ',') }}</span>
+                    <span class="text-red-600 font-medium">-${{ number_format($this->periodTotals['planned']['expenses']) }}</span>
                 </div>
                 <hr class="border-gray-200 dark:border-gray-600">
                 <div class="flex justify-between items-center font-semibold">
                     <span class="text-gray-900 dark:text-white">Net</span>
-                    <span class="text-green-600">+${{ number_format($this->periodTotals['planned']['net'], 0, '.', ',') }}</span>
+                    <span class="text-green-600">+${{ number_format($this->periodTotals['planned']['net']) }}</span>
                 </div>
             </div>
         </div>
@@ -73,21 +77,21 @@
             <div class="absolute -top-3 -right-3 bg-green-100 text-green-800 text-xl font-bold px-3 py-1 rounded-full">
                 {{ $this->periodTotals['percentage_saved'] }}% saved
             </div>
-            
+
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-4 text-center">Entered</h3>
             <div class="space-y-3">
                 <div class="flex justify-between items-center">
                     <span class="text-gray-600 dark:text-gray-400">Incomes</span>
-                    <span class="text-green-600 font-medium">+${{ number_format($this->periodTotals['entered']['income'], 0, '.', ',') }}</span>
+                    <span class="text-green-600 font-medium">+${{ number_format($this->periodTotals['entered']['income']) }}</span>
                 </div>
                 <div class="flex justify-between items-center">
                     <span class="text-gray-600 dark:text-gray-400">Expenses</span>
-                    <span class="text-red-600 font-medium">-${{ number_format($this->periodTotals['entered']['expenses'], 0, '.', ',') }}</span>
+                    <span class="text-red-600 font-medium">-${{ number_format($this->periodTotals['entered']['expenses']) }}</span>
                 </div>
                 <hr class="border-gray-200 dark:border-gray-600">
                 <div class="flex justify-between items-center font-semibold">
                     <span class="text-gray-900 dark:text-white">Net</span>
-                    <span class="text-green-600">+${{ number_format($this->periodTotals['entered']['net'], 0, '.', ',') }}</span>
+                    <span class="text-green-600">+${{ number_format($this->periodTotals['entered']['net']) }}</span>
                 </div>
             </div>
         </div>
@@ -104,14 +108,14 @@
                     $startDate = $dateRange['start'];
                     $currentDate = $startDate->copy();
                 @endphp
-                
+
                 {{-- Day headers --}}
                 @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $dayName)
                     <div class="text-center text-sm font-medium text-gray-500 dark:text-gray-400 py-2">
                         {{ $dayName }}
                     </div>
                 @endforeach
-                
+
                 {{-- Calendar days --}}
                 @for($i = 0; $i < 7; $i++)
                     @php
@@ -119,20 +123,20 @@
                         $dayTransactions = $this->transactions[$dayDate] ?? collect();
                         $hasTransactions = $dayTransactions->isNotEmpty();
                     @endphp
-                    
-                    <div 
+
+                    <div
                         wire:click="openTransactionForDay('{{ $dayDate }}')"
                         class="min-h-24 border border-gray-200 dark:border-gray-600 rounded-lg p-2 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer {{ $currentDate->isToday() ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' : '' }}"
                         title="Click to add new transaction"
                     >
-                        <div 
+                        <div
                             wire:click.stop="selectDate('{{ $dayDate }}')"
                             class="text-sm font-medium text-gray-900 dark:text-white hover:font-bold hover:text-base cursor-pointer inline-block mb-1 transition-all"
                             title="Click for day view"
                         >
                             {{ $currentDate->format('j') }}
                         </div>
-                        
+
                         {{-- Transaction indicators --}}
                         <div class="space-y-1 mt-1">
                             @foreach($dayTransactions->take(3) as $transaction)
@@ -140,30 +144,31 @@
                                     $isIncome = $transaction->type === 'income';
                                     $isTransfer = $transaction->type === 'transfer';
                                     $isPlanned = $transaction->status === 'planned';
+                                    $isEntered = $transaction->status === 'entered';
                                 @endphp
-                                
-                                <div 
+
+                                <div
                                     wire:click.stop="openTransactionForm({{ $transaction->id }})"
                                     class="text-xs px-2 py-1 rounded text-white truncate cursor-pointer transition-colors
-                                           @if($isIncome) 
-                                               bg-green-600 hover:bg-green-700 {{ $isPlanned ? 'font-bold' : 'opacity-60' }}
-                                           @elseif($isTransfer) 
-                                               bg-orange-600 hover:bg-orange-700 {{ $isPlanned ? 'font-bold' : 'opacity-60' }}
-                                           @else 
-                                               bg-red-600 hover:bg-red-700 {{ $isPlanned ? 'font-bold' : 'opacity-60' }}
+                                           @if($isIncome)
+                                               bg-green-600 hover:bg-green-700 {{ $isEntered ? 'opacity-70' : 'font-bold' }}
+                                           @elseif($isTransfer)
+                                               bg-orange-600 hover:bg-orange-700 {{ $isEntered ? 'opacity-70' : 'font-bold' }}
+                                           @else
+                                               bg-red-600 hover:bg-red-700 {{ $isEntered ? 'opacity-70' : 'font-bold' }}
                                            @endif"
-                                    title="Click to edit: {{ $transaction->description }}"
+                                    title="Click to edit: {{ $transaction->description }} ({{ $isEntered ? 'Entered' : 'Planned' }})"
                                 >
-                                    ${{ number_format($transaction->amount, 0) }} {{ Str::limit($transaction->description, 12) }}
+                                    ${{ number_format($transaction->amount) }} {{ Str::limit($transaction->description, 12) }}
                                 </div>
                             @endforeach
-                            
+
                             @if($dayTransactions->count() > 3)
                                 <div class="text-xs text-gray-500">+{{ $dayTransactions->count() - 3 }} more</div>
                             @endif
                         </div>
                     </div>
-                    
+
                     @php $currentDate->addDay(); @endphp
                 @endfor
             </div>
@@ -174,7 +179,7 @@
     @if($view === 'month')
         <div class="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-6">
             <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Month Calendar</h3>
-            
+
             @php
                 $dateRange = $this->getDateRange();
                 $startDate = $dateRange['start']->startOfMonth()->startOfWeek(); // Start from Sunday
@@ -182,7 +187,7 @@
                 $currentDate = $startDate->copy();
                 $weeksCount = $startDate->diffInWeeks($endDate) + 1;
             @endphp
-            
+
             <div class="grid grid-cols-7 gap-1">
                 {{-- Day headers --}}
                 @foreach(['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as $dayName)
@@ -190,7 +195,7 @@
                         {{ $dayName }}
                     </div>
                 @endforeach
-                
+
                 {{-- Calendar grid --}}
                 @for($week = 0; $week < $weeksCount; $week++)
                     @for($day = 0; $day < 7; $day++)
@@ -200,22 +205,22 @@
                             $isCurrentMonth = $currentDate->month === $this->currentDate->month;
                             $isToday = $currentDate->isToday();
                         @endphp
-                        
-                        <div 
+
+                        <div
                             wire:click="openTransactionForDay('{{ $dayDate }}')"
                             class="min-h-20 border border-gray-200 dark:border-gray-600 rounded p-1 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer
                                 {{ !$isCurrentMonth ? 'bg-gray-50 dark:bg-gray-700 text-gray-400' : '' }}
                                 {{ $isToday ? 'bg-blue-50 dark:bg-blue-900 border-blue-200 dark:border-blue-700' : '' }}"
                             title="Click to add new transaction"
                         >
-                            <div 
+                            <div
                                 wire:click.stop="selectDate('{{ $dayDate }}')"
                                 class="text-xs font-medium {{ $isCurrentMonth ? 'text-gray-900 dark:text-white' : 'text-gray-400' }} hover:font-bold hover:text-sm cursor-pointer inline-block mb-1 transition-all"
                                 title="Click for day view"
                             >
                                 {{ $currentDate->format('j') }}
                             </div>
-                            
+
                             {{-- Transaction indicators for month view (compact) --}}
                             <div class="mt-1 space-y-0.5">
                                 @foreach($dayTransactions->take(2) as $transaction)
@@ -223,33 +228,34 @@
                                         $isIncome = $transaction->type === 'income';
                                         $isTransfer = $transaction->type === 'transfer';
                                         $isPlanned = $transaction->status === 'planned';
+                                        $isEntered = $transaction->status === 'entered';
                                     @endphp
-                                    
-                                    <div 
+
+                                    <div
                                         wire:click.stop="openTransactionForm({{ $transaction->id }})"
                                         class="text-xs px-2 py-1 rounded text-white truncate cursor-pointer transition-colors
-                                               @if($isIncome) 
-                                                   bg-green-600 hover:bg-green-700 {{ $isPlanned ? 'font-bold' : 'opacity-60' }}
-                                               @elseif($isTransfer) 
-                                                   bg-orange-600 hover:bg-orange-700 {{ $isPlanned ? 'font-bold' : 'opacity-60' }}
-                                               @else 
-                                                   bg-red-600 hover:bg-red-700 {{ $isPlanned ? 'font-bold' : 'opacity-60' }}
-                                               @endif" 
-                                        title="Click to edit: {{ $transaction->description }}"
+                                               @if($isIncome)
+                                                   bg-green-600 hover:bg-green-700 {{ $isEntered ? 'opacity-70' : 'font-bold' }}
+                                               @elseif($isTransfer)
+                                                   bg-orange-600 hover:bg-orange-700 {{ $isEntered ? 'opacity-70' : 'font-bold' }}
+                                               @else
+                                                   bg-red-600 hover:bg-red-700 {{ $isEntered ? 'opacity-70' : 'font-bold' }}
+                                               @endif"
+                                        title="Click to edit: {{ $transaction->description }} ({{ $isEntered ? 'Entered' : 'Planned' }})"
                                     >
-                                        ${{ number_format($transaction->amount, 0) }}
+                                        ${{ number_format($transaction->amount) }}
                                         @if($transaction->description && strlen($transaction->description) > 0)
                                             {{ Str::limit($transaction->description, 8) }}
                                         @endif
                                     </div>
                                 @endforeach
-                                
+
                                 @if($dayTransactions->count() > 2)
                                     <div class="text-xs text-gray-500">+{{ $dayTransactions->count() - 2 }} more</div>
                                 @endif
                             </div>
                         </div>
-                        
+
                         @php $currentDate->addDay(); @endphp
                     @endfor
                 @endfor
@@ -275,22 +281,27 @@
                             $isIncome = $transaction->type === 'income';
                             $isTransfer = $transaction->type === 'transfer';
                             $isPlanned = $transaction->status === 'planned';
+                            $isEntered = $transaction->status === 'entered';
                             $baseColor = $isIncome ? 'green' : ($isTransfer ? 'orange' : 'red');
-                            $colorIntensity = $isPlanned ? '400' : '600'; // Lighter for planned, darker for entered
+                            $colorIntensity = $isEntered ? '400' : '600'; // Lighter for entered, darker for planned
                         @endphp
 
-                        <div 
+                        <div
                             wire:click="openTransactionForm({{ $transaction->id }})"
-                            class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                            class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors {{ $isEntered ? 'opacity-70' : '' }}"
                         >
                             <div class="flex items-center gap-3">
                                 {{-- Type and Status Indicator --}}
-                                <div class="w-3 h-3 rounded-full bg-{{ $baseColor }}-{{ $colorIntensity }} {{ $isPlanned ? 'opacity-70' : '' }}"></div>
+                                <div class="w-3 h-3 rounded-full bg-{{ $baseColor }}-{{ $colorIntensity }}"></div>
 
                                 <div>
-                                    <p class="font-medium text-gray-900 dark:text-white {{ $isPlanned ? 'opacity-75' : '' }}">
+                                    <p class="font-medium text-gray-900 dark:text-white">
                                         {{ $transaction->description }}
-                                        @if($isPlanned) <span class="text-xs text-gray-500">(Planned)</span> @endif
+                                        @if($isEntered)
+                                            <span class="text-xs text-gray-500">(Entered)</span>
+                                        @else
+                                            <span class="text-xs text-blue-600">(Planned)</span>
+                                        @endif
                                     </p>
                                     <div class="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
                                         <span>{{ $transaction->account->name }}</span>
@@ -308,7 +319,7 @@
                                 @php
                                     $isTransferDestination = $isTransfer && $transaction->isTransferDestination();
                                 @endphp
-                                <p class="font-semibold text-{{ $baseColor }}-{{ $colorIntensity }} {{ $isPlanned ? 'opacity-75' : '' }}">
+                                <p class="font-semibold text-{{ $baseColor }}-{{ $colorIntensity }}">
                                     {{ $isIncome || $isTransferDestination ? '+' : '-' }}${{ number_format($transaction->amount, 2) }}
                                 </p>
                             </div>
