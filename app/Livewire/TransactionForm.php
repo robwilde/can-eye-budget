@@ -166,6 +166,20 @@ final class TransactionForm extends Component
         return $categories->sortBy('full_name');
     }
 
+    #[Computed]
+    public function buttonText(): string
+    {
+        $typeCapitalized = ucfirst($this->type);
+
+        return match (true) {
+            $this->mode === 'edit' && $this->status === 'planned'   => "Update $typeCapitalized",
+            $this->mode === 'edit' && $this->status === 'entered'   => "Confirm $typeCapitalized",
+            $this->mode === 'create' && $this->status === 'planned' => "Add $typeCapitalized",
+            $this->mode === 'create' && $this->status === 'entered' => "Enter $typeCapitalized",
+            default                                                 => "Save $typeCapitalized",
+        };
+    }
+
     public function open(?Transaction $transaction = null): void
     {
         if ($transaction) {

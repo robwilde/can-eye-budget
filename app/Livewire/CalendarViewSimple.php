@@ -133,6 +133,8 @@ final class CalendarViewSimple extends Component
         $enteredNet = $enteredIncome - $enteredExpenses;
 
         // Calculate percentage saved (how much of planned net was actually achieved)
+        // Only calculate when plannedNet is positive (planning to save money)
+        // If plannedNet is zero or negative, percentage doesn't apply meaningfully
         $percentageSaved = $plannedNet > 0 ? round(($enteredNet / $plannedNet) * 100) : 0;
 
         return [
