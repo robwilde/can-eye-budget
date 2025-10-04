@@ -102,18 +102,51 @@ final class CalendarViewSimple extends Component
     #[Computed]
     public function periodTotals(): array
     {
+        $allTransactions = $this->transactions->flatten();
+
+        $plannedIncome = 0;
+        $plannedExpenses = 0;
+        $enteredIncome = 0;
+        $enteredExpenses = 0;
+
+        foreach ($allTransactions as $transaction) {
+            $amount = $transaction->amount;
+            $isPlanned = $transaction->status === 'planned';
+
+            if ($transaction->type === 'income') {
+                if ($isPlanned) {
+                    $plannedIncome += $amount;
+                } else {
+                    $enteredIncome += $amount;
+                }
+            } elseif ($transaction->type === 'expense') {
+                if ($isPlanned) {
+                    $plannedExpenses += $amount;
+                } else {
+                    $enteredExpenses += $amount;
+                }
+            }
+            // Skip transfers for income/expense totals as they're neutral to net worth
+        }
+
+        $plannedNet = $plannedIncome - $plannedExpenses;
+        $enteredNet = $enteredIncome - $enteredExpenses;
+
+        // Calculate percentage saved (how much of planned net was actually achieved)
+        $percentageSaved = $plannedNet > 0 ? round(($enteredNet / $plannedNet) * 100) : 0;
+
         return [
             'planned' => [
-                'income'   => 0,
-                'expenses' => 0,
-                'net'      => 0,
+                'income'   => $plannedIncome,
+                'expenses' => $plannedExpenses,
+                'net'      => $plannedNet,
             ],
             'entered' => [
-                'income'   => 0,
-                'expenses' => 0,
-                'net'      => 0,
+                'income'   => $enteredIncome,
+                'expenses' => $enteredExpenses,
+                'net'      => $enteredNet,
             ],
-            'percentage_saved' => 0,
+            'percentage_saved' => $percentageSaved,
         ];
     }
 
