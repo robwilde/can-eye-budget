@@ -146,8 +146,8 @@ test('visual distinction shows planned transactions prominently and entered with
     // Planned transactions should have font-bold class (prominent)
     $component->assertSeeHtml('font-bold');
 
-    // Entered transactions should have opacity-60 class (reduced alpha)
-    $component->assertSeeHtml('opacity-60');
+    // Entered transactions should have opacity-70 class (reduced alpha)
+    $component->assertSeeHtml('opacity-70');
 
     // Should see both transactions
     $component->assertSee('Planned expense');
