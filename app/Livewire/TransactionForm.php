@@ -15,6 +15,7 @@ use Livewire\Attributes\Computed;
 use Livewire\Attributes\Validate;
 use Livewire\Component;
 use Spatie\LaravelData\Optional;
+use Throwable;
 
 final class TransactionForm extends Component
 {
@@ -46,6 +47,9 @@ final class TransactionForm extends Component
     public ?int $transfer_to_account_id = null;
 
     public bool $reconciled = false;
+
+    #[Validate('required|in:planned,entered')]
+    public string $status = 'planned';
 
     public bool $showCategoryForm = false;
 
@@ -80,6 +84,7 @@ final class TransactionForm extends Component
             $this->category_id = $transaction->category_id;
             $this->transfer_to_account_id = $transaction->transfer_to_account_id;
             $this->reconciled = (bool) ($transaction->reconciled ?? false);
+            $this->status = $transaction->status ?? 'planned';
         } else {
             // Explicitly ensure no default account is selected for new transactions
             $this->account_id = null;
@@ -89,6 +94,7 @@ final class TransactionForm extends Component
             $this->category_id = null;
             $this->transfer_to_account_id = null;
             $this->reconciled = false;
+            $this->status = $this->determineStatusFromDate($this->transaction_date);
         }
     }
 
@@ -160,17 +166,35 @@ final class TransactionForm extends Component
         return $categories->sortBy('full_name');
     }
 
+    #[Computed]
+    public function buttonText(): string
+    {
+        $typeCapitalized = ucfirst($this->type);
+
+        return match (true) {
+            $this->mode === 'edit' && $this->status === 'planned'   => "Update $typeCapitalized",
+            $this->mode === 'edit' && $this->status === 'entered'   => "Confirm $typeCapitalized",
+            $this->mode === 'create' && $this->status === 'planned' => "Add $typeCapitalized",
+            $this->mode === 'create' && $this->status === 'entered' => "Enter $typeCapitalized",
+            default                                                 => "Save $typeCapitalized",
+        };
+    }
+
     public function open(?Transaction $transaction = null): void
     {
         if ($transaction) {
             $this->mount($transaction);
         } else {
-            $this->reset(['account_id', 'type', 'amount', 'description', 'category_id', 'transfer_to_account_id', 'reconciled']);
+            $this->reset(['account_id', 'type', 'amount', 'description', 'category_id', 'transfer_to_account_id', 'reconciled', 'status']);
             $this->transaction_date = Carbon::now()
                                             ->format('Y-m-d');
             // Explicitly set to null to ensure "Select account" shows
             $this->account_id = null;
             $this->type = 'expense';
+            $this->status = $this->determineStatusFromDate($this->transaction_date);
+            // Ensure we're in create mode and clear any previous transaction
+            $this->transaction = null;
+            $this->mode = 'create';
         }
         $this->isOpen = true;
     }
@@ -181,6 +205,9 @@ final class TransactionForm extends Component
         $this->reset(['showCategoryForm', 'newCategoryName', 'newCategoryParentId', 'newCategoryColor', 'categorySearch']);
     }
 
+    /**
+     * @throws Throwable
+     */
     public function save(): void
     {
         $this->validate();
@@ -238,7 +265,7 @@ final class TransactionForm extends Component
                 recurringPatternId : Optional::create(),
                 importId           : Optional::create(),
                 reconciled         : $this->reconciled,
-                status             : 'entered',
+                status             : $this->status,
                 account            : Optional::create(),
                 category           : Optional::create(),
                 transferToAccount  : Optional::create(),
@@ -265,6 +292,9 @@ final class TransactionForm extends Component
         }
     }
 
+    /**
+     * @throws Throwable
+     */
     public function delete(): void
     {
         if (! $this->transaction) {
@@ -353,6 +383,14 @@ final class TransactionForm extends Component
         }
     }
 
+    public function updatedTransactionDate(): void
+    {
+        // Update status based on new date (only for new transactions)
+        if (! $this->transaction || ! $this->transaction->exists) {
+            $this->status = $this->determineStatusFromDate($this->transaction_date);
+        }
+    }
+
     public function openFromEvent(?int $transactionId = null): void
     {
         if ($transactionId) {
@@ -385,5 +423,17 @@ final class TransactionForm extends Component
             'open-transaction-form'          => 'openFromEvent',
             'open-transaction-form-for-date' => 'openForDate',
         ];
+    }
+
+    /**
+     * Determine transaction status based on date
+     * Future dates = planned, today/past dates = entered
+     */
+    private function determineStatusFromDate(string $dateString): string
+    {
+        $transactionDate = Carbon::createFromFormat('Y-m-d', $dateString);
+        $today = Carbon::today();
+
+        return $transactionDate->greaterThan($today) ? 'planned' : 'entered';
     }
 }

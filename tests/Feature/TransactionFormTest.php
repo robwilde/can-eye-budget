@@ -141,20 +141,23 @@ test('transaction form button text changes based on type', function () {
 
     $this->actingAs($user);
 
-    // Test Enter Expense
+    // Test button text in create mode (default status is 'planned' = 'Add')
     $component = Livewire::test('transaction-form')
-                         ->call('open') // Open the modal first
+                         ->call('open')
                          ->set('type', 'expense');
 
-    $component->assertSee('Enter Expense');
+    $component->assertSee('Add Expense');
 
-    // Test Enter Income
-    $component->set('type', 'income');
-    $component->assertSee('Enter Income');
+    // Test with entered status shows 'Enter'
+    $component->set('status', 'entered')
+              ->assertSee('Enter Expense');
 
-    // Test Enter Transfer
-    $component->set('type', 'transfer');
-    $component->assertSee('Enter Transfer');
+    // Test different transaction types
+    $component->set('type', 'income')
+              ->assertSee('Enter Income');
+
+    $component->set('type', 'transfer')
+              ->assertSee('Enter Transfer');
 });
 
 test('transaction form button text shows Update in edit mode', function () {
@@ -171,5 +174,5 @@ test('transaction form button text shows Update in edit mode', function () {
     Livewire::test('transaction-form')
             ->call('open', $transaction)
             ->assertSet('mode', 'edit')
-            ->assertSee('Update Expense');
+            ->assertSee('Confirm Expense'); // Edit mode with 'entered' status shows 'Confirm'
 });
