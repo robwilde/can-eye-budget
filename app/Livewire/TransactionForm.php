@@ -1,4 +1,4 @@
-<?php
+<?php /** @noinspection PhpUnusedPrivateMethodInspection */
 
 declare(strict_types=1);
 
@@ -6,6 +6,7 @@ namespace App\Livewire;
 
 use App\Data\TransactionData;
 use App\Models\Category;
+use App\Models\RecurringPattern;
 use App\Models\Transaction;
 use App\Services\TransactionService;
 use Carbon\Carbon;
@@ -51,6 +52,20 @@ final class TransactionForm extends Component
     #[Validate('required|in:planned,entered')]
     public string $status = 'planned';
 
+    // Entry mode: 'enter' for actual transactions, 'plan' for future/budgeted
+    #[Validate('required|in:enter,plan')]
+    public string $entryMode = 'enter';
+
+    // Recurring pattern fields
+    #[Validate('nullable|integer|min:0|max:365')]
+    public ?int $recurringFrequency = 0;
+
+    #[Validate('nullable|in:always,date')]
+    public ?string $recurringDuration = 'always';
+
+    #[Validate('nullable|date|after:transaction_date')]
+    public ?string $recurringEndDate = null;
+
     public bool $showCategoryForm = false;
 
     public string $newCategoryName = '';
@@ -85,6 +100,10 @@ final class TransactionForm extends Component
             $this->transfer_to_account_id = $transaction->transfer_to_account_id;
             $this->reconciled = (bool) ($transaction->reconciled ?? false);
             $this->status = $transaction->status ?? 'planned';
+            // Always determine entry mode from date, so past planned transactions switch to Enter mode
+            $this->entryMode = $this->determineEntryModeFromDate($this->transaction_date);
+            // Load recurring pattern if exists
+            $this->recurringFrequency = 0; // Will be populated when we add recurring pattern relationship
         } else {
             // Explicitly ensure no default account is selected for new transactions
             $this->account_id = null;
@@ -94,7 +113,14 @@ final class TransactionForm extends Component
             $this->category_id = null;
             $this->transfer_to_account_id = null;
             $this->reconciled = false;
+
+            // Determine status and entry mode based on the transaction date
             $this->status = $this->determineStatusFromDate($this->transaction_date);
+            $this->entryMode = $this->determineEntryModeFromDate($this->transaction_date);
+
+            $this->recurringFrequency = 0;
+            $this->recurringDuration = 'always';
+            $this->recurringEndDate = null;
         }
     }
 
@@ -172,11 +198,11 @@ final class TransactionForm extends Component
         $typeCapitalized = ucfirst($this->type);
 
         return match (true) {
-            $this->mode === 'edit' && $this->status === 'planned'   => "Update $typeCapitalized",
-            $this->mode === 'edit' && $this->status === 'entered'   => "Confirm $typeCapitalized",
-            $this->mode === 'create' && $this->status === 'planned' => "Add $typeCapitalized",
-            $this->mode === 'create' && $this->status === 'entered' => "Enter $typeCapitalized",
-            default                                                 => "Save $typeCapitalized",
+            $this->mode === 'edit' && $this->entryMode === 'plan'    => "Update $typeCapitalized",
+            $this->mode === 'edit' && $this->entryMode === 'enter'   => "Confirm $typeCapitalized",
+            $this->mode === 'create' && $this->entryMode === 'plan'  => "Plan $typeCapitalized",
+            $this->mode === 'create' && $this->entryMode === 'enter' => "Enter $typeCapitalized",
+            default                                                  => "Save $typeCapitalized",
         };
     }
 
@@ -185,16 +211,25 @@ final class TransactionForm extends Component
         if ($transaction) {
             $this->mount($transaction);
         } else {
-            $this->reset(['account_id', 'type', 'amount', 'description', 'category_id', 'transfer_to_account_id', 'reconciled', 'status']);
-            $this->transaction_date = Carbon::now()
-                                            ->format('Y-m-d');
-            // Explicitly set to null to ensure "Select account" shows
-            $this->account_id = null;
-            $this->type = 'expense';
-            $this->status = $this->determineStatusFromDate($this->transaction_date);
-            // Ensure we're in create mode and clear any previous transaction
+            // Clear transaction first so hooks work correctly
             $this->transaction = null;
             $this->mode = 'create';
+
+            $this->reset(['account_id', 'type', 'amount', 'description', 'category_id', 'transfer_to_account_id', 'reconciled', 'status', 'recurringFrequency', 'recurringDuration', 'recurringEndDate']);
+
+            // Set transaction date
+            $this->transaction_date = Carbon::now()->format('Y-m-d');
+
+            // Explicitly set status and entry mode based on date
+            $this->status = $this->determineStatusFromDate($this->transaction_date);
+            $this->entryMode = $this->determineEntryModeFromDate($this->transaction_date);
+
+            // Set remaining fields
+            $this->account_id = null;
+            $this->type = 'expense';
+            $this->recurringFrequency = 0;
+            $this->recurringDuration = 'always';
+            $this->recurringEndDate = null;
         }
         $this->isOpen = true;
     }
@@ -253,6 +288,35 @@ final class TransactionForm extends Component
         }
 
         try {
+            $recurringPatternId = null;
+
+            // Create recurring pattern if applicable
+            if ($this->entryMode === 'plan' && $this->recurringFrequency > 0 && $this->mode === 'create') {
+                $frequencyPattern = $this->convertFrequencyToPattern($this->recurringFrequency);
+
+                $endDate = null;
+                if ($this->recurringDuration === 'date' && $this->recurringEndDate) {
+                    $endDate = Carbon::createFromFormat('Y-m-d', $this->recurringEndDate);
+                }
+
+                $recurringPattern = RecurringPattern::create([
+                    'name'                   => $this->description ?: 'Recurring '.$this->type,
+                    'type'                   => $this->type,
+                    'amount'                 => $this->amount,
+                    'description'            => $this->description,
+                    'category_id'            => $this->category_id,
+                    'account_id'             => $this->account_id,
+                    'transfer_to_account_id' => $this->transfer_to_account_id,
+                    'frequency'              => $frequencyPattern['frequency'],
+                    'frequency_interval'     => (int) $frequencyPattern['interval'],
+                    'start_date'             => Carbon::createFromFormat('Y-m-d', $this->transaction_date),
+                    'end_date'               => $endDate,
+                    'is_active'              => true,
+                ]);
+
+                $recurringPatternId = $recurringPattern->id;
+            }
+
             $transactionData = new TransactionData(
                 id                 : $this->transaction->id ?? Optional::create(),
                 account_id         : $this->account_id,
@@ -262,7 +326,7 @@ final class TransactionForm extends Component
                 transaction_date   : Carbon::createFromFormat('Y-m-d', $this->transaction_date),
                 category_id        : $this->category_id ?: Optional::create(),
                 transferToAccountId: $this->transfer_to_account_id ?: Optional::create(),
-                recurringPatternId : Optional::create(),
+                recurringPatternId : $recurringPatternId ?: Optional::create(),
                 importId           : Optional::create(),
                 reconciled         : $this->reconciled,
                 status             : $this->status,
@@ -385,9 +449,10 @@ final class TransactionForm extends Component
 
     public function updatedTransactionDate(): void
     {
-        // Update status based on new date (only for new transactions)
+        // Update status and entry mode based on new date (only for new transactions)
         if (! $this->transaction || ! $this->transaction->exists) {
             $this->status = $this->determineStatusFromDate($this->transaction_date);
+            $this->entryMode = $this->determineEntryModeFromDate($this->transaction_date);
         }
     }
 
@@ -410,11 +475,47 @@ final class TransactionForm extends Component
     {
         $this->open();
         $this->transaction_date = $date;
+
+        // Explicitly update entry mode and status for the new date
+        // (updatedTransactionDate hook won't fire if the date is the same)
+        $this->status = $this->determineStatusFromDate($this->transaction_date);
+        $this->entryMode = $this->determineEntryModeFromDate($this->transaction_date);
     }
 
     public function render(): View
     {
         return view('livewire.transaction-form');
+    }
+
+    /**
+     * Toggle between enter and plan modes
+     */
+    public function toggleEntryMode(string $mode): void
+    {
+        if (in_array($mode, ['enter', 'plan'])) {
+            $this->entryMode = $mode;
+            $this->syncStatusWithEntryMode();
+        }
+    }
+
+    /**
+     * Update status when entry mode changes
+     */
+    public function updatedEntryMode(): void
+    {
+        $this->syncStatusWithEntryMode();
+    }
+
+    /**
+     * Handle recurring frequency changes
+     */
+    public function updatedRecurringFrequency(): void
+    {
+        // Reset duration and end date when frequency changes
+        if ($this->recurringFrequency === 0) {
+            $this->recurringDuration = 'always';
+            $this->recurringEndDate = null;
+        }
     }
 
     protected function getListeners(): array
@@ -435,5 +536,65 @@ final class TransactionForm extends Component
         $today = Carbon::today();
 
         return $transactionDate->greaterThan($today) ? 'planned' : 'entered';
+    }
+
+    /**
+     * Determine entry mode based on date
+     * Future dates = plan mode, today/past dates = enter mode
+     */
+    private function determineEntryModeFromDate(string $dateString): string
+    {
+        // Handle empty string case
+        if (empty($dateString)) {
+            return 'enter';
+        }
+
+        // Parse both dates at start of day for accurate comparison
+        $transactionDate = Carbon::createFromFormat('Y-m-d', $dateString)->startOfDay();
+        $today = Carbon::today()->startOfDay();
+
+        // If the transaction date is less than or equal to today (today or past), use enter mode
+        // If the transaction date is greater than today (future), use plan mode
+        return $transactionDate->lte($today) ? 'enter' : 'plan';
+    }
+
+    /**
+     * Determine entry mode from transaction status
+     * Used when editing existing transactions
+     */
+    private function determineEntryModeFromStatus(string $status): string
+    {
+        return $status === 'entered' ? 'enter' : 'plan';
+    }
+
+    /**
+     * Sync status with current entry mode
+     */
+    private function syncStatusWithEntryMode(): void
+    {
+        $this->status = $this->entryMode === 'enter' ? 'entered' : 'planned';
+    }
+
+    /**
+     * Convert frequency value (days) to RecurringPattern frequency type
+     */
+    private function convertFrequencyToPattern(int $days): array
+    {
+        return match ($days) {
+            0       => ['frequency' => null, 'interval' => 0],
+            1       => ['frequency' => 'daily', 'interval' => 1],
+            7       => ['frequency' => 'weekly', 'interval' => 1],
+            14      => ['frequency' => 'weekly', 'interval' => 2],
+            21      => ['frequency' => 'weekly', 'interval' => 3],
+            28      => ['frequency' => 'weekly', 'interval' => 4],
+            30      => ['frequency' => 'monthly', 'interval' => 1],
+            45      => ['frequency' => 'monthly', 'interval' => 1.5],
+            60      => ['frequency' => 'monthly', 'interval' => 2],
+            91      => ['frequency' => 'monthly', 'interval' => 3],
+            121     => ['frequency' => 'monthly', 'interval' => 4],
+            182     => ['frequency' => 'monthly', 'interval' => 6],
+            365     => ['frequency' => 'yearly', 'interval' => 1],
+            default => ['frequency' => 'custom', 'interval' => $days],
+        };
     }
 }
