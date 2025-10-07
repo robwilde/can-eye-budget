@@ -19,6 +19,7 @@ final class RecurringPattern extends Model
         'type',
         'amount',
         'description',
+        'account_id',
         'category_id',
         'transfer_to_account_id',
         'frequency',
@@ -26,6 +27,7 @@ final class RecurringPattern extends Model
         'start_date',
         'end_date',
         'is_active',
+        'last_generated_date',
     ];
 
     protected $casts = [
