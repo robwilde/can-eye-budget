@@ -76,17 +76,41 @@
                         </div>
                     @endif
 
-                    {{-- Transaction Dots --}}
+                    {{-- Transaction List --}}
                     @if($dayTransactions->isNotEmpty())
-                        <div class="flex gap-1 mt-2 flex-wrap">
+                        <div class="space-y-1 mt-2">
                             @foreach($dayTransactions->take(3) as $transaction)
-                                <div 
-                                    class="w-2 h-2 rounded-full {{ $transaction->type === 'income' ? 'bg-green-500' : ($transaction->type === 'transfer' ? 'bg-orange-500' : 'bg-red-500') }}"
-                                    title="{{ $transaction->description }}"
-                                ></div>
+                                @php
+                                    $isPlanned = $transaction->isPlanned();
+                                    $typeColor = $transaction->type === 'income' ? 'green' : ($transaction->type === 'transfer' ? 'orange' : 'red');
+
+                                    // Planned: colored background with white text
+                                    // Entered: no background with colored text
+                                    if ($isPlanned) {
+                                        $bgClass = $typeColor === 'green' ? 'bg-green-600 dark:bg-green-700' :
+                                                  ($typeColor === 'orange' ? 'bg-orange-600 dark:bg-orange-700' : 'bg-red-600 dark:bg-red-700');
+                                        $textClass = 'text-white';
+                                        $amountClass = 'text-white font-semibold';
+                                    } else {
+                                        $bgClass = 'bg-transparent';
+                                        $textClass = 'text-gray-700 dark:text-gray-300';
+                                        $amountClass = $typeColor === 'green' ? 'text-green-600 dark:text-green-400 font-medium' :
+                                                      ($typeColor === 'orange' ? 'text-orange-600 dark:text-orange-400 font-medium' : 'text-red-600 dark:text-red-400 font-medium');
+                                    }
+                                @endphp
+                                <div class="text-xs px-1 py-0.5 {{ $bgClass }} rounded truncate">
+                                    <div class="flex justify-between items-center">
+                                        <span class="{{ $textClass }} text-[10px] truncate flex-1 mr-1" title="{{ $transaction->description }}">
+                                            {{ Str::limit($transaction->description, 15) }}
+                                        </span>
+                                        <span class="{{ $amountClass }} text-[10px] whitespace-nowrap">
+                                            ${{ number_format($transaction->amount, 0) }}
+                                        </span>
+                                    </div>
+                                </div>
                             @endforeach
                             @if($dayTransactions->count() > 3)
-                                <div class="text-xs text-gray-400">+{{ $dayTransactions->count() - 3 }}</div>
+                                <div class="text-xs text-gray-400 pl-1">+{{ $dayTransactions->count() - 3 }} more</div>
                             @endif
                         </div>
                     @endif

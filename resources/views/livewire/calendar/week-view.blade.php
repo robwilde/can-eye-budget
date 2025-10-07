@@ -93,16 +93,42 @@
                 {{-- Transaction List --}}
                 <div class="space-y-1 max-h-40 overflow-y-auto">
                     @forelse($dayTransactions->take(5) as $transaction)
-                        <div class="text-xs p-2 bg-gray-50 dark:bg-gray-700 rounded border-l-2 {{ $transaction->type === 'income' ? 'border-green-500' : ($transaction->type === 'transfer' ? 'border-orange-500' : 'border-red-500') }}">
-                            <div class="font-medium text-gray-900 dark:text-white truncate">
+                        @php
+                            $isPlanned = $transaction->isPlanned();
+                            $typeColor = $transaction->type === 'income' ? 'green' : ($transaction->type === 'transfer' ? 'orange' : 'red');
+
+                            // Planned: colored background with white text
+                            // Entered: no background with colored text
+                            if ($isPlanned) {
+                                $bgClass = $typeColor === 'green' ? 'bg-green-600 dark:bg-green-700' :
+                                          ($typeColor === 'orange' ? 'bg-orange-600 dark:bg-orange-700' : 'bg-red-600 dark:bg-red-700');
+                                $textClass = 'text-white';
+                                $borderClass = 'border-transparent';
+                                $accountTextClass = 'text-white/80';
+                            } else {
+                                $bgClass = 'bg-gray-50 dark:bg-gray-700';
+                                $textClass = 'text-gray-900 dark:text-white';
+                                $borderClass = $typeColor === 'green' ? 'border-green-500' :
+                                              ($typeColor === 'orange' ? 'border-orange-500' : 'border-red-500');
+                                $accountTextClass = 'text-gray-500 dark:text-gray-400';
+                            }
+                        @endphp
+                        <div class="text-xs p-2 {{ $bgClass }} rounded border-l-2 {{ $borderClass }}">
+                            <div class="font-medium {{ $textClass }} truncate">
                                 {{ Str::limit($transaction->description, 20) }}
                             </div>
-                            <div class="text-gray-500 dark:text-gray-400 flex justify-between">
+                            <div class="{{ $accountTextClass }} flex justify-between">
                                 <span>{{ $transaction->account->name }}</span>
                                 @php
                                     $isTransferDestination = $transaction->type === 'transfer' && $transaction->isTransferDestination();
+                                    if ($isPlanned) {
+                                        $amountClass = 'text-white font-semibold';
+                                    } else {
+                                        $amountClass = $typeColor === 'green' ? 'text-green-600 dark:text-green-400' :
+                                                      ($typeColor === 'orange' ? 'text-orange-600 dark:text-orange-400' : 'text-red-600 dark:text-red-400');
+                                    }
                                 @endphp
-                                <span class="{{ $transaction->type === 'income' ? 'text-green-600' : ($transaction->type === 'transfer' ? 'text-orange-600' : 'text-red-600') }}">
+                                <span class="{{ $amountClass }}">
                                     {{ $transaction->type === 'income' || $isTransferDestination ? '+' : '-' }}${{ number_format($transaction->amount, 0) }}
                                 </span>
                             </div>

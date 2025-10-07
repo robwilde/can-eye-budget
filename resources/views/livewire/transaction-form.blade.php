@@ -47,10 +47,47 @@
                 </div>
             @endif
 
+            {{-- Enter vs Plan Toggle --}}
+            <div class="mb-6 text-center border-b border-gray-200 dark:border-gray-600">
+                <div class="flex justify-center items-center gap-2 pb-2">
+                    <span class="text-sm text-gray-500 dark:text-gray-400">Enter vs Plan</span>
+                    <svg class="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                        <circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="1.5" fill="none"/>
+                        <text x="10" y="14" text-anchor="middle" font-size="12" fill="currentColor">?</text>
+                    </svg>
+                </div>
+                <div class="flex justify-center gap-8 pb-3">
+                    <button
+                        type="button"
+                        wire:click="toggleEntryMode('enter')"
+                        class="flex items-center gap-2 text-base font-medium transition-colors {{ $entryMode === 'enter' ? 'text-green-600 dark:text-green-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300' }}"
+                    >
+                        @if($entryMode === 'enter')
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        @endif
+                        Enter
+                    </button>
+                    <button
+                        type="button"
+                        wire:click="toggleEntryMode('plan')"
+                        class="flex items-center gap-2 text-base font-medium transition-colors {{ $entryMode === 'plan' ? 'text-red-600 dark:text-red-400' : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300' }}"
+                    >
+                        @if($entryMode === 'plan')
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                            </svg>
+                        @endif
+                        Plan
+                    </button>
+                </div>
+            </div>
+
             {{-- Amount Description --}}
             <div class="mb-6">
-                <label class="block text-gray-600 text-sm mb-2">
-                    Amount with description:
+                <label class="block text-gray-600 dark:text-gray-400 text-sm mb-2">
+                    {{ $entryMode === 'enter' ? 'Actual amount with description:' : 'Planned amount with description:' }}
                     <svg class="w-4 h-4 text-gray-400 inline ml-1" fill="currentColor" viewBox="0 0 20 20">
                         <circle cx="10" cy="10" r="3"/>
                     </svg>
@@ -81,67 +118,119 @@
                 @enderror
             </div>
 
-            {{-- Account Selection --}}
-            <div class="grid grid-cols-2 gap-4 mb-6">
-                <div>
-                    <label class="block text-gray-600 text-sm mb-2">
-                        Account:
-                        <svg class="w-4 h-4 text-gray-400 inline ml-1" fill="currentColor" viewBox="0 0 20 20">
-                            <circle cx="10" cy="10" r="3"/>
-                        </svg>
-                    </label>
-                    <select wire:model.live="account_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                        <option value="">Select account</option>
-                        @foreach(auth()->user()->accounts as $account)
-                            <option value="{{ $account->id }}">
-                                {{ $account->name }} (${{ number_format($account->getCurrentBalance(), 2) }})
-                            </option>
-                        @endforeach
-                    </select>
-                    @error('account_id')
-                    <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
-                    @enderror
-                </div>
-
-                @if($type === 'transfer')
+            {{-- Account and Recurring Pattern Selection --}}
+            <div class="mb-6">
+                <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-gray-600 text-sm mb-2">
-                            To Account:
+                        <label class="block text-gray-600 dark:text-gray-400 text-sm mb-2">
+                            Account:
+                            <svg class="w-4 h-4 text-gray-400 inline ml-1" fill="currentColor" viewBox="0 0 20 20">
+                                <circle cx="10" cy="10" r="3"/>
+                            </svg>
                         </label>
-                        <select wire:model.live="transfer_to_account_id" class="w-full border border-gray-300 rounded px-3 py-2 text-sm">
-                            <option value="">Select destination</option>
-                            @foreach($this->transferAccounts as $account)
+                        <select wire:model.live="account_id" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                            <option value="">Select account</option>
+                            @foreach(auth()->user()->accounts as $account)
                                 <option value="{{ $account->id }}">
                                     {{ $account->name }} (${{ number_format($account->getCurrentBalance(), 2) }})
                                 </option>
                             @endforeach
                         </select>
-                        @error('transfer_to_account_id')
+                        @error('account_id')
                         <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
                         @enderror
                     </div>
-                @endif
-            </div>
 
-
-            {{-- Transaction Status --}}
-            <div class="mb-6">
-                <label class="block text-gray-600 dark:text-gray-400 text-sm mb-2">
-                    Transaction Status:
-                </label>
-                <div class="flex gap-4">
-                    <label class="flex items-center">
-                        <input type="radio" wire:model.live="status" value="planned" class="mr-2">
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Planned (Future/Budgeted)</span>
-                    </label>
-                    <label class="flex items-center">
-                        <input type="radio" wire:model.live="status" value="entered" class="mr-2">
-                        <span class="text-sm text-gray-700 dark:text-gray-300">Entered (Confirmed/Reconciled)</span>
-                    </label>
+                    @if($type === 'transfer')
+                        <div>
+                            <label class="block text-gray-600 dark:text-gray-400 text-sm mb-2">
+                                To Account:
+                            </label>
+                            <select wire:model.live="transfer_to_account_id" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                <option value="">Select destination</option>
+                                @foreach($this->transferAccounts as $account)
+                                    <option value="{{ $account->id }}">
+                                        {{ $account->name }} (${{ number_format($account->getCurrentBalance(), 2) }})
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('transfer_to_account_id')
+                            <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
+                            @enderror
+                        </div>
+                    @endif
                 </div>
-                @error('status')
-                <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
-                @enderror
+
+                {{-- Recurring Pattern (Plan Mode Only) --}}
+                @if($entryMode === 'plan')
+                    <div class="mt-4">
+                        <label class="block text-gray-600 dark:text-gray-400 text-sm mb-2">
+                            Repeat:
+                        </label>
+                        <select wire:model.live="recurringFrequency" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                            <option value="0">Don't repeat</option>
+                            <optgroup label="───">
+                                <option value="1">Everyday</option>
+                                <option value="7">Every week</option>
+                                <option value="30">Every month</option>
+                                <option value="91">Every 3 months</option>
+                                <option value="182">Every 6 months</option>
+                                <option value="365">Every year</option>
+                            </optgroup>
+                            <optgroup label="───">
+                                <option value="8">Every workday</option>
+                                <option value="9">Every weekend</option>
+                                <option value="10">2 on 2 off</option>
+                                <option value="2">Every 2 days</option>
+                                <option value="3">Every 3 days</option>
+                                <option value="4">Every 4 days</option>
+                                <option value="5">Every 5 days</option>
+                                <option value="6">Every 6 days</option>
+                            </optgroup>
+                            <optgroup label="───">
+                                <option value="14">Every 2 weeks</option>
+                                <option value="21">Every 3 weeks</option>
+                                <option value="28">Every 4 weeks</option>
+                                <option value="45">Every 1.5 months</option>
+                                <option value="60">Every 2 months</option>
+                                <option value="121">Every 4 months</option>
+                            </optgroup>
+                        </select>
+                        @error('recurringFrequency')
+                        <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
+                        @enderror
+                    </div>
+
+                    @if($recurringFrequency > 0)
+                        <div class="mt-4 grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-600 dark:text-gray-400 text-sm mb-2">
+                                    Duration:
+                                </label>
+                                <select wire:model.live="recurringDuration" class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100">
+                                    <option value="always">Always</option>
+                                    <option value="date">Until date</option>
+                                </select>
+                            </div>
+
+                            @if($recurringDuration === 'date')
+                                <div>
+                                    <label class="block text-gray-600 dark:text-gray-400 text-sm mb-2">
+                                        End date:
+                                    </label>
+                                    <input
+                                        type="date"
+                                        wire:model.live="recurringEndDate"
+                                        class="w-full border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                                    >
+                                    @error('recurringEndDate')
+                                    <span class="text-red-500 text-sm mt-1 block">{{ $message }}</span>
+                                    @enderror
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                @endif
             </div>
 
             {{-- Category Selection --}}
